@@ -26,6 +26,7 @@ install:
   - conda env create -f envs/environment.yaml
   - source activate dde_env
   - conda list
+  - export KERAS_BACKEND=theano
 
 script: 
   - make test-cnn
