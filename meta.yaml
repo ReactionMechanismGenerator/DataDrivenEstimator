@@ -25,7 +25,6 @@ test:
   imports:
     - cnn_framework
   commands:
-    - cp $PREFIX/lib/python2.7/site-packages/rmgpy/rmgrc $SRC_DIR [unix]
     - make -C $SRC_DIR test-cnn [unix]
 
 about:
