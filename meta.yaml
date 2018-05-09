@@ -21,6 +21,7 @@ requirements:
     - pymongo
     - theano=0.9.0
     - pydot-ng
+    - rmg # we need to remove it if we build it for rmg to use
 
 test:
   source_files:
