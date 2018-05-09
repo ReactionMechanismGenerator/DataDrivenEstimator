@@ -1,0 +1,13 @@
+name: dde_env
+channels:
+  - defaults
+  - rmg
+  - KEHANG
+dependencies:
+  - KEHANG::rmg
+  - KEHANG::rmgdatabase
+  - KEHANG::keras=1.2.2
+  - tqdm
+  - pymongo
+  - theano=0.9.0
+  - pydot-ng
