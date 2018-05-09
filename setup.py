@@ -16,7 +16,7 @@ for root, dirs, files in os.walk('cnn_framework'):
 
 setup(
     name='DataDrivenEstimator',
-    version='0.1.0',
+    version='1.0.0',
     packages=['cnn_framework'],
     description='Data Driven Estimator',
     author='Kehang Han',
