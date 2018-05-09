@@ -1,0 +1,34 @@
+# For conda build
+package:
+  name: dde
+  version: {{ environ.get('GIT_DESCRIBE_TAG', '') }} # set by build.sh, which gets from rmgpy/__init__.py
+
+source:
+  path: .
+
+build:
+  number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+
+requirements:
+  build:
+    - python
+
+  run:
+    - python
+    - nose
+
+test:
+  source_files:
+    - '*'
+  requires:
+    - nose
+  imports:
+    - cnn_framework
+  commands:
+    - cp $PREFIX/lib/python2.7/site-packages/rmgpy/rmgrc $SRC_DIR [unix]
+    - make -C $SRC_DIR test-cnn [unix]
+
+about:
+  home: http://github.com/KEHANG/DataDrivenEstimator
+  license: MIT
+  summary: "A package of major data driven estimators for thermochemistry and kinetics."
