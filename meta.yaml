@@ -16,6 +16,11 @@ requirements:
   run:
     - python
     - nose
+    - keras=1.2.2
+    - tqdm
+    - pymongo
+    - theano=0.9.0
+    - pydot-ng
 
 test:
   source_files:
@@ -25,6 +30,7 @@ test:
   imports:
     - cnn_framework
   commands:
+    - export KERAS_BACKEND=theano
     - make -C $SRC_DIR test-cnn [unix]
 
 about:
