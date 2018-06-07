@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
 
 import os
 import argparse
@@ -9,7 +11,8 @@ from tqdm import tqdm
 from cnn_framework.data import get_db_mols
 from cnn_framework.predictor import Predictor
 
-def parseCommandLineArguments():
+
+def parse_command_line_arguments():
     """
     Parse the command-line arguments being passed to RMG Py. This uses the
     :mod:`argparse` module, which ensures that the command-line arguments are
@@ -17,15 +20,15 @@ def parseCommandLineArguments():
     """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--datasets', metavar='FILE', type=str, 
-        help='path to da file specifies on which datasets to test')
+    parser.add_argument('-d', '--datasets', metavar='FILE', type=str,
+                        help='path to da file specifies on which datasets to test')
 
-    parser.add_argument('-m', '--model', type=str, 
-        help='path to the testing model')
-
+    parser.add_argument('-m', '--model', type=str,
+                        help='path to the testing model')
 
     return parser.parse_args()
 ################################################################################
+
 
 def read_datasets_file(datasets_file_path):
     """
@@ -40,6 +43,7 @@ def read_datasets_file(datasets_file_path):
                 datasets.append((host, db, table))
 
     return datasets
+
 
 def prepare_data(host, db_name, collection_name, prediction_task="Hf298(kcal/mol)"):
 
@@ -72,25 +76,27 @@ def prepare_data(host, db_name, collection_name, prediction_task="Hf298(kcal/mol
 
     return smiles_list, ys
 
+
 def prepare_predictor(model):
 
     predictor = Predictor()
 
     predictor_input = os.path.join(model,
-                                  'predictor_input.py')
+                                   'predictor_input.py')
 
     predictor.load_input(predictor_input)
 
     param_path = os.path.join(model,
-                             'saved_model',
-                             'full_train.h5')
+                              'saved_model',
+                              'full_train.h5')
     predictor.load_parameters(param_path)
 
     return predictor
 
+
 def make_predictions(predictor, smiles_list):
 
-    from rmgpy.molecule.molecule import Molecule
+    from rmgpy.molecule import Molecule
     ys_cnn = []
     for smiles in tqdm(smiles_list):
         mol = Molecule().fromSMILES(smiles)
@@ -98,6 +104,7 @@ def make_predictions(predictor, smiles_list):
         ys_cnn.append(y_cnn)
 
     return ys_cnn
+
 
 def evaluate(smiles_list, ys, ys_pred, prediction_task="Hf298(kcal/mol)"):
 
@@ -118,6 +125,7 @@ def evaluate(smiles_list, ys, ys_pred, prediction_task="Hf298(kcal/mol)"):
 
     return result_df
 
+
 def display_result(result_df, prediction_task="Hf298(kcal/mol)"):
 
     descr = result_df[prediction_task+"_diff"].describe()
@@ -128,9 +136,10 @@ def display_result(result_df, prediction_task="Hf298(kcal/mol)"):
 
     display_str = 'prediction task: {0}, count: {1}, error mean: {2:.02f}, error std: {3:.02f}'.format(prediction_task, 
                                                                                                        count, mean, std) 
-    print display_str
+    print(display_str)
 
-    return (count, mean, std) 
+    return count, mean, std
+
 
 def validate(datasets_file, model):
 
@@ -142,7 +151,7 @@ def validate(datasets_file, model):
     evaluation_results = {}
     for host, db_name, collection_name in datasets:
         
-        print "\nhost: {0}, db: {1}, collection: {2}".format(host, db_name, collection_name)
+        print("\nhost: {0}, db: {1}, collection: {2}".format(host, db_name, collection_name))
         
         # prepare data for testing
         smiles_list, ys = prepare_data(host, db_name, collection_name,
@@ -164,9 +173,10 @@ def validate(datasets_file, model):
 
     return evaluation_results
 
+
 def main():
 
-    args = parseCommandLineArguments()
+    args = parse_command_line_arguments()
 
     datasets_file = args.datasets
     model = args.model
@@ -175,4 +185,6 @@ def main():
     with open('evaluation_results.json', 'w') as f_out:
         json.dump(evaluation_results, f_out, indent=4, sort_keys=True)
 
-main()
+
+if __name__ == '__main__':
+    main()

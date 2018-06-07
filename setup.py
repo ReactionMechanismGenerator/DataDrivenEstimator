@@ -1,8 +1,8 @@
 import os
 from distutils.core import setup
 
-scripts=['scripts/train_cnn.py',
-         'scripts/evaluate_cnn.py']
+scripts = ['scripts/train_cnn.py',
+           'scripts/evaluate_cnn.py']
 
 modules = []
 for root, dirs, files in os.walk('cnn_framework'):
