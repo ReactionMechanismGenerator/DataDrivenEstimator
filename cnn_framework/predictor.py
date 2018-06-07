@@ -15,10 +15,11 @@ import json
 
 
 class Predictor(object):
-    def __init__(self, input_file=None, datasets_file=None):
+    def __init__(self, input_file=None, datasets_file=None, save_tensors_dir=None):
         self.model = None
         self.input_file = input_file
         self.datasets_file = datasets_file
+        self.save_tensors_dir = save_tensors_dir
         self.datasets = None
         self.add_extra_atom_attribute = None
         self.add_extra_bond_attribute = None
@@ -72,7 +73,8 @@ class Predictor(object):
                                                                  self.differentiate_bond_type,
                                                                  self.padding,
                                                                  self.padding_final_size,
-                                                                 self.prediction_task)
+                                                                 self.prediction_task,
+                                                                 self.save_tensors_dir)
 
         X_test, y_test, folded_Xs, folded_ys = folded_data
 
@@ -143,7 +145,8 @@ class Predictor(object):
                                                                      self.differentiate_bond_type,
                                                                      self.padding,
                                                                      self.padding_final_size,
-                                                                     self.prediction_task)
+                                                                     self.prediction_task,
+                                                                     self.save_tensors_dir)
 
         X_test, y_test, X_train, y_train = folded_data
 
@@ -194,7 +197,8 @@ class Predictor(object):
                                                                  self.differentiate_bond_type,
                                                                  self.padding,
                                                                  self.padding_final_size,
-                                                                 self.prediction_task)
+                                                                 self.prediction_task,
+                                                                 self.save_tensors_dir)
 
         X_test, y_test, folded_Xs, folded_ys = folded_data
 
