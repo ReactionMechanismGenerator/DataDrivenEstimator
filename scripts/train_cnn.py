@@ -24,6 +24,9 @@ def parse_command_line_arguments():
     parser.add_argument('-d', '--datasets', metavar='FILE', type=str,
                         nargs='+', help='a file specifies on which datasets to train')
 
+    parser.add_argument('--save_tensors_dir', metavar='DIR',
+                        help='Location to save tensors on disk (frees up memory)')
+
     parser.add_argument('-f', '--folds', type=int,
                         default=5, help='number of folds for training')
 
@@ -109,6 +112,7 @@ if __name__ == '__main__':
     args = parse_command_line_arguments()
     input_file = args.input[0]
     datasets_file = args.datasets[0]
+    save_tensors_dir = args.save_tensors_dir
     folds = args.folds
     train_mode = args.train_mode
     batch_size = args.batch_size
@@ -128,7 +132,7 @@ if __name__ == '__main__':
     rmg = RMG()
     rmg.logHeader()
 
-    predictor = Predictor(datasets_file=datasets_file)
+    predictor = Predictor(datasets_file=datasets_file, save_tensors_dir=save_tensors_dir)
     predictor.load_input(input_file)
 
     lr_func = "float({0} * np.exp(- epoch / {1}))".format(lr0, lr1)
