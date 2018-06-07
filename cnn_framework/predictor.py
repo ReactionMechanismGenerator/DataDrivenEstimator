@@ -198,6 +198,14 @@ class Predictor(object):
 
         X_test, y_test, folded_Xs, folded_ys = folded_data
 
+        # Data might be stored as file names
+        if isinstance(X_test[0], str):
+            dims = np.load(X_test[0]).shape
+            X_test_new = np.zeros((len(X_test),) + dims)
+            for i, fname in enumerate(X_test):
+                X_test_new[i] = np.load(fname)
+            X_test = X_test_new
+
         for fold in range(folds):
             data = prepare_data_one_fold(folded_Xs,
                                          folded_ys,
@@ -209,10 +217,22 @@ class Predictor(object):
             X_train.extend(X_inner_val)
             y_train.extend(y_inner_val)
 
+            # Data might be stored as file names
+            if isinstance(X_train[0], str):
+                dims = np.load(X_train[0]).shape
+                X_train_new = np.zeros((len(X_train),) + dims)
+                X_outer_val_new = np.zeros((len(X_outer_val),) + dims)
+                for i, fname in enumerate(X_train):
+                    X_train_new[i] = np.load(fname)
+                for i, fname in enumerate(X_outer_val):
+                    X_outer_val_new[i] = np.load(fname)
+                X_train = X_train_new
+                X_outer_val = X_outer_val_new
+
             earlyStopping = EarlyStopping(monitor='val_loss', patience=patience, verbose=1, mode='auto')
 
-            history_callback = self.model.fit(np.array(X_train),
-                                              np.array(y_train),
+            history_callback = self.model.fit(np.asarray(X_train),
+                                              np.asarray(y_train),
                                               callbacks=[earlyStopping],
                                               nb_epoch=nb_epoch,
                                               batch_size=batch_size,
@@ -223,12 +243,12 @@ class Predictor(object):
                 json.dump(loss_history, f_in, indent=2)
 
             # evaluate outer validation loss
-            outer_val_loss = self.model.evaluate(np.array(X_outer_val),
-                                                 np.array(y_outer_val),
+            outer_val_loss = self.model.evaluate(np.asarray(X_outer_val),
+                                                 np.asarray(y_outer_val),
                                                  batch_size=50)
             logging.info("\nOuter val loss: {0}".format(outer_val_loss))
 
-            test_loss = self.model.evaluate(np.array(X_test), np.array(y_test), batch_size=50)
+            test_loss = self.model.evaluate(np.asarray(X_test), np.asarray(y_test), batch_size=50)
             logging.info("\nTest loss: {0}".format(test_loss))
 
             # once finish training one fold, reset the model
