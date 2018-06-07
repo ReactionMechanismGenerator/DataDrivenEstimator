@@ -92,9 +92,6 @@ def train_model(model,
         loss - list of training losses corresponding to each epoch
         inner_val_loss - list of validation losses corresponding to each epoch
     """
-    X_train = np.array(X_train)
-    y_train = np.array(y_train)
-
     # Create learning rate function
     lr_func_string = 'def lr(epoch):\n    return {}\n'.format(lr_func)
     exec lr_func_string
@@ -125,8 +122,8 @@ def train_model(model,
                 start = batch_idx * batch_size
                 end = min(start + batch_size, training_size)
 
-                single_mol_as_array = X_train[training_order[start:end]]
-                single_y_as_array = y_train[training_order[start:end]]
+                single_mol_as_array = np.array(X_train[training_order[start:end]])
+                single_y_as_array = np.array(y_train[training_order[start:end]])
                 sloss = model.train_on_batch(single_mol_as_array, single_y_as_array)
                 this_loss.append(sloss)
 
