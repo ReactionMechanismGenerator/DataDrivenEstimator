@@ -4,6 +4,9 @@
 from __future__ import print_function
 from cnn_framework.layers import MoleculeConv
 from keras.models import Sequential
+from .uncertainty import RandomMask, EnsembleModel
+from keras.models import Model
+from keras.layers import Input
 from keras.layers.core import Dense
 from keras.optimizers import RMSprop, Adam
 import numpy as np
@@ -21,34 +24,49 @@ def build_model(embedding_size=512, attribute_vector_size=33, depth=5,
                 scale_output=0.05, padding=False,
                 mol_conv_inner_activation='tanh',
                 mol_conv_outer_activation='softmax',
-                hidden=50, hidden_activation='tanh',
+                hidden=50, hidden_depth=1, hidden_activation='tanh',
                 output_activation='linear', output_size=1,
-                lr=0.01, optimizer='adam', loss='mse'):
+                lr=0.01, optimizer='adam', loss='mse',
+                dropout_rate_inner=0.0, dropout_rate_outer=0.0,
+                dropout_rate_hidden=0.0, dropout_rate_output=0.0,
+                n_model=None, padding_final_size=None):
 
     """
     build generic cnn model that takes molecule tensor and predicts output
     with size of output_size.
     """
 
-    model = Sequential()
+    inputs = Input(shape=(None, None, None)) # 3D tensor for each input
 
-    model.add(MoleculeConv(units=embedding_size,
+    x = MoleculeConv(units=embedding_size,
                            inner_dim=attribute_vector_size-1,
                            depth=depth,
                            scale_output=scale_output,
                            padding=padding,
                            activation_inner=mol_conv_inner_activation,
-                           activation_output=mol_conv_outer_activation))
+                           activation_output=mol_conv_outer_activation,
+                           dropout_rate_inner=dropout_rate_inner,
+                           dropout_rate_outer=dropout_rate_outer,
+                           padding_final_size=padding_final_size)(inputs)
 
     logging.info('cnn_model: added MoleculeConv layer ({} -> {})'.format('mol', embedding_size))
     if hidden > 0:
+        for i in range(hidden_depth):
+            if dropout_rate_hidden!=0.0: x = RandomMask(dropout_rate_hidden)(x)
+            x= Dense(hidden, activation=hidden_activation)(x)
+            logging.info('cnn_model: added {} Dense layer (-> {})'.format(hidden_activation, hidden))
 
-        model.add(Dense(hidden, activation=hidden_activation))
-        logging.info('cnn_model: added {} Dense layer (-> {})'.format(hidden_activation, hidden))
+    if dropout_rate_output!=0.0: x = RandomMask(dropout_rate_output)(x)
+    y = Dense(output_size, activation=output_activation)(x)
 
-    model.add(Dense(output_size, activation=output_activation))
     logging.info('cnn_model: added {} Dense layer (-> {})'.format(output_activation, output_size))
 
+    if n_model is None:
+        model = Model(input=inputs, output=y)
+    else:
+        model = EnsembleModel(input=inputs, output=y, seeds=range(n_model))
+
+        
     # Compile
     if optimizer == 'adam':
         optimizer = Adam(lr=lr)
