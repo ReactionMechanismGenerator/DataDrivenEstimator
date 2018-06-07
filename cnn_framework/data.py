@@ -239,35 +239,34 @@ def prepare_full_train_data_from_multiple_datasets(datasets,
 @attr('helper')
 def split_test_from_train_and_val(X, y, extra_data=None, shuffle_seed=None, testing_ratio=0.1):
 
-    n = len(X)
     # Feed shuffle seed
     if shuffle_seed is not None:
         np.random.seed(shuffle_seed)
 
-    all_indices = range(n)
-    np.random.shuffle(all_indices)
+    # Get random number generator state so that we can shuffle multiple arrays
+    rng_state = np.random.get_state()
 
-    # shuffle X and y
-    X_shuffled = [X[i] for i in all_indices]
-    y_shuffled = [y[i] for i in all_indices]
+    # Shuffle data in place
+    np.random.shuffle(X)
+    np.random.set_state(rng_state)
+    np.random.shuffle(y)
     if extra_data is not None:
-        extra_data_shuffled = [extra_data[i] for i in all_indices]
+        np.random.set_state(rng_state)
+        np.random.shuffle(extra_data)
 
-    split = int(len(all_indices) * testing_ratio)
-    X_test, X_train_and_val = [X_shuffled[i] for i in all_indices[:split]], [X_shuffled[i] for i in all_indices[split:]]
-    y_test, y_train_and_val = [y_shuffled[i] for i in all_indices[:split]], [y_shuffled[i] for i in all_indices[split:]]
+    split = int(len(X) * testing_ratio)
+    X_test, X_train_and_val = X[:split], X[split:]
+    y_test, y_train_and_val = y[:split], y[split:]
 
     if extra_data is not None:
-        extra_data_shuffled = [extra_data[i] for i in all_indices]
-        extra_data_test, extra_data_train_and_val = [extra_data_shuffled[i] for i in all_indices[:split]],\
-                                                    [extra_data_shuffled[i] for i in all_indices[split:]]
+        extra_data_test, extra_data_train_and_val = extra_data[:split], extra_data[split:]
 
     # reset np random seed to avoid side-effect on other methods
     # relying on np.random
     if shuffle_seed is not None:
         np.random.seed()
 
-    if extra_data:
+    if extra_data is not None:
         return X_test, y_test, X_train_and_val, y_train_and_val, extra_data_test, extra_data_train_and_val
     else:
         return X_test, y_test, X_train_and_val, y_train_and_val
@@ -284,16 +283,17 @@ def prepare_folded_data(X, y, folds, shuffle_seed=None):
     if shuffle_seed is not None:
         np.random.seed(shuffle_seed)
 
-    all_indices = range(n)
-    np.random.shuffle(all_indices)
+    # Get random number generator state so that we can shuffle multiple arrays
+    rng_state = np.random.get_state()
 
-    # shuffle X and y
-    X_shuffled = [X[i] for i in all_indices]
-    y_shuffled = [y[i] for i in all_indices]
+    # Shuffle data in place
+    np.random.shuffle(X)
+    np.random.set_state(rng_state)
+    np.random.shuffle(y)
 
     # Split up data
-    folded_Xs = [X_shuffled[i:i+target_fold_size] for i in range(0, n, target_fold_size)]
-    folded_ys = [y_shuffled[i:i+target_fold_size] for i in range(0, n, target_fold_size)]
+    folded_Xs = [X[i:i+target_fold_size] for i in range(0, n, target_fold_size)]
+    folded_ys = [y[i:i+target_fold_size] for i in range(0, n, target_fold_size)]
 
     logging.info('Split data into {} folds'.format(folds))
 
@@ -311,11 +311,17 @@ def split_inner_val_from_train_data(X_train, y_train, shuffle_seed=None, trainin
     if shuffle_seed is not None:
         np.random.seed(shuffle_seed)
 
-    training_indices = range(len(X_train))
-    np.random.shuffle(training_indices)
-    split = int(len(training_indices) * training_ratio)
-    X_train, X_inner_val = [X_train[i] for i in training_indices[:split]], [X_train[i] for i in training_indices[split:]]
-    y_train, y_inner_val = [y_train[i] for i in training_indices[:split]], [y_train[i] for i in training_indices[split:]]
+    # Get random number generator state so that we can shuffle multiple arrays
+    rng_state = np.random.get_state()
+
+    # Shuffle data in place
+    np.random.shuffle(X_train)
+    np.random.set_state(rng_state)
+    np.random.shuffle(y_train)
+
+    split = int(len(X_train) * training_ratio)
+    X_train, X_inner_val = X_train[:split], X_train[split:]
+    y_train, y_inner_val = y_train[:split], y_train[split:]
 
     # reset np random seed to avoid side-effect on other methods
     # relying on np.random
@@ -338,8 +344,14 @@ def prepare_data_one_fold(folded_Xs,
     logging.info('...using fold {}'.format(current_fold+1))
 
     # Recombine into training and testing
-    X_train = [x for folded_X in (folded_Xs[:current_fold] + folded_Xs[(current_fold + 1):]) for x in folded_X]
-    y_train = [y for folded_y in (folded_ys[:current_fold] + folded_ys[(current_fold + 1):]) for y in folded_y]
+    if all(isinstance(folded_X, np.ndarray) for folded_X in folded_Xs):
+        X_train = np.concatenate(folded_Xs[:current_fold] + folded_Xs[(current_fold+1):])
+    else:
+        X_train = [x for folded_X in (folded_Xs[:current_fold] + folded_Xs[(current_fold+1):]) for x in folded_X]
+    if all(isinstance(folded_y, np.ndarray) for folded_y in folded_ys):
+        y_train = np.concatenate(folded_ys[:current_fold] + folded_ys[(current_fold+1):])
+    else:
+        y_train = [y for folded_y in (folded_ys[:current_fold] + folded_ys[(current_fold + 1):]) for y in folded_y]
 
     # Test is current_fold
     X_outer_val = folded_Xs[current_fold]
