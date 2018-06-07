@@ -57,9 +57,6 @@ def build_model(embedding_size=512, attribute_vector_size=33, depth=5,
         logging.info('Can only handle adam or rmsprop optimizers currently')
         quit(1)
 
-    if loss == 'custom':
-        loss = mse_no_NaN
-
     logging.info('compiling cnn_model...')
     model.compile(loss=loss, optimizer=optimizer)
     logging.info('done compiling.')
