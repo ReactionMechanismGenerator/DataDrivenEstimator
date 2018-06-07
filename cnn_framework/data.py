@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 import logging
+import os
 import numpy as np
 from cnn_framework.molecule_tensor import get_molecule_tensor
 from pymongo import MongoClient
@@ -101,22 +102,45 @@ def prepare_folded_data_from_multiple_datasets(datasets,
                                                differentiate_bond_type=True,
                                                padding=True,
                                                padding_final_size=20,
-                                               prediction_task="Hf298(kcal/mol)"):
+                                               prediction_task="Hf298(kcal/mol)",
+                                               save_tensors_dir=None):
+    if save_tensors_dir is not None:
+        if not os.path.exists(save_tensors_dir):
+            os.makedirs(save_tensors_dir)
+
     folded_datasets = []
     test_data_datasets = []
+    fidx = 0
     for host, db, table, testing_ratio in datasets:
         X, y, _ = get_data_from_db(host, db, table, prediction_task=prediction_task)
 
         # At this point, X just contains molecule objects,
-        # so convert them to tensors
-        X = [get_molecule_tensor(mol,
-                                 add_extra_atom_attribute=add_extra_atom_attribute,
-                                 add_extra_bond_attribute=add_extra_bond_attribute,
-                                 differentiate_atom_type=differentiate_atom_type,
-                                 differentiate_bond_type=differentiate_bond_type,
-                                 padding=padding,
-                                 padding_final_size=padding_final_size)
-             for mol in X]
+        # so convert them to tensors. If save_tensors_dir is specified,
+        # only store the file names in X and save the tensors to the disk.
+        if save_tensors_dir is None:
+            X = [get_molecule_tensor(mol,
+                                     add_extra_atom_attribute=add_extra_atom_attribute,
+                                     add_extra_bond_attribute=add_extra_bond_attribute,
+                                     differentiate_atom_type=differentiate_atom_type,
+                                     differentiate_bond_type=differentiate_bond_type,
+                                     padding=padding,
+                                     padding_final_size=padding_final_size)
+                 for mol in X]
+        else:
+            X_new = []
+            for mol in X:
+                x = get_molecule_tensor(mol,
+                                        add_extra_atom_attribute=add_extra_atom_attribute,
+                                        add_extra_bond_attribute=add_extra_bond_attribute,
+                                        differentiate_atom_type=differentiate_atom_type,
+                                        differentiate_bond_type=differentiate_bond_type,
+                                        padding=padding,
+                                        padding_final_size=padding_final_size)
+                fname = os.path.abspath(os.path.join(save_tensors_dir, '{}.npy'.format(fidx)))
+                np.save(fname, x)
+                X_new.append(fname)
+                fidx += 1
+            X = X_new
 
         logging.info('Splitting dataset with testing ratio of {0}...'.format(testing_ratio))
         split_data = split_test_from_train_and_val(X,
@@ -166,22 +190,45 @@ def prepare_full_train_data_from_multiple_datasets(datasets,
                                                    padding=True,
                                                    padding_final_size=20,
                                                    prediction_task="Hf298(kcal/mol)",
-                                                   save_meta=True):
+                                                   save_meta=True,
+                                                   save_tensors_dir=None):
+    if save_tensors_dir is not None:
+        if not os.path.exists(save_tensors_dir):
+            os.makedirs(save_tensors_dir)
+
     test_data_datasets = []
     train_datasets = []
+    fidx = 0
     for host, db, table, testing_ratio in datasets:
         X, y, smis = get_data_from_db(host, db, table, prediction_task=prediction_task)
 
         # At this point, X just contains molecule objects,
-        # so convert them to tensors
-        X = [get_molecule_tensor(mol,
-                                 add_extra_atom_attribute=add_extra_atom_attribute,
-                                 add_extra_bond_attribute=add_extra_bond_attribute,
-                                 differentiate_atom_type=differentiate_atom_type,
-                                 differentiate_bond_type=differentiate_bond_type,
-                                 padding=padding,
-                                 padding_final_size=padding_final_size)
-             for mol in X]
+        # so convert them to tensors. If save_tensors_dir is specified,
+        # only store the file names in X and save the tensors to the disk.
+        if save_tensors_dir is None:
+            X = [get_molecule_tensor(mol,
+                                     add_extra_atom_attribute=add_extra_atom_attribute,
+                                     add_extra_bond_attribute=add_extra_bond_attribute,
+                                     differentiate_atom_type=differentiate_atom_type,
+                                     differentiate_bond_type=differentiate_bond_type,
+                                     padding=padding,
+                                     padding_final_size=padding_final_size)
+                 for mol in X]
+        else:
+            X_new = []
+            for mol in X:
+                x = get_molecule_tensor(mol,
+                                        add_extra_atom_attribute=add_extra_atom_attribute,
+                                        add_extra_bond_attribute=add_extra_bond_attribute,
+                                        differentiate_atom_type=differentiate_atom_type,
+                                        differentiate_bond_type=differentiate_bond_type,
+                                        padding=padding,
+                                        padding_final_size=padding_final_size)
+                fname = os.path.abspath(os.path.join(save_tensors_dir, '{}.npy'.format(fidx)))
+                np.save(fname, x)
+                X_new.append(fname)
+                fidx += 1
+            X = X_new
 
         logging.info('Splitting dataset with testing ratio of {0}...'.format(testing_ratio))
         split_data = split_test_from_train_and_val(X,
