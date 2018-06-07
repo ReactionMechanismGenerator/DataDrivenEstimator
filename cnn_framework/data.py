@@ -3,7 +3,7 @@
 
 import logging
 import numpy as np
-from cnn_framework.molecule_tensor import get_molecule_tensor, pad_molecule_tensor
+from cnn_framework.molecule_tensor import get_molecule_tensor
 from pymongo import MongoClient
 from nose.plugins.attrib import attr
 
@@ -40,15 +40,7 @@ def get_db_mols(host, db_name, collection_name):
     return db_mols
 
 
-def get_data_from_db(host, db_name, collection_name, 
-                     add_extra_atom_attribute=True,
-                     add_extra_bond_attribute=True,
-                     differentiate_atom_type=True,
-                     differentiate_bond_type=True,
-                     padding=True,
-                     padding_final_size=20,
-                     prediction_task="Hf298(kcal/mol)"):
-
+def get_data_from_db(host, db_name, collection_name, prediction_task="Hf298(kcal/mol)"):
     from rmgpy.molecule import Molecule
     # connect to db and query
     host_connection_url, port = get_host_info(host)
@@ -58,8 +50,8 @@ def get_data_from_db(host, db_name, collection_name,
     db_cursor = collection.find()
 
     # collect data
-    logging.info('Collecting polycyclic data: {0}.{1}...'.format(db_name, collection_name))
-    X = []
+    logging.info('Collecting data: {0}.{1}...'.format(db_name, collection_name))
+    mols = []
     y = []
     smis = []
     db_mols = []
@@ -67,8 +59,6 @@ def get_data_from_db(host, db_name, collection_name,
         db_mols.append(db_mol)
 
     logging.info('Done collecting data: {0} points...'.format(len(db_mols)))
-
-    logging.info('Generating molecular tensor data...')
 
     # decide what predict task is
     if prediction_task not in ["Hf298(kcal/mol)", "S298(cal/mol/K)", "Cp(cal/mol/K)"]:
@@ -81,13 +71,6 @@ def get_data_from_db(host, db_name, collection_name,
             mol = Molecule().fromAdjacencyList(adj)
         else:
             mol = Molecule().fromSMILES(smile)
-        mol_tensor = get_molecule_tensor(mol,
-                                         add_extra_atom_attribute,
-                                         add_extra_bond_attribute,
-                                         differentiate_atom_type,
-                                         differentiate_bond_type)
-        if padding:
-            mol_tensor = pad_molecule_tensor(mol_tensor, padding_final_size)
 
         if prediction_task != "Cp(cal/mol/K)":
             yi = float(db_mol[prediction_task])
@@ -101,38 +84,39 @@ def get_data_from_db(host, db_name, collection_name,
             Cp1500 = float(db_mol["Cp1500(cal/mol/K)"])
             yi = np.array([Cp300, Cp400, Cp500, Cp600, Cp800, Cp1000, Cp1500])
 
-        X.append(mol_tensor)
+        mols.append(mol)
         y.append(yi)
         smis.append(smile)
 
-    logging.info('Done: generated {0} tensors with padding={1}'.format(len(X), padding))
+    logging.info('Done: generated {0} molecules'.format(len(mols)))
 
-    return X, y, smis
+    return mols, y, smis
 
 
-def prepare_folded_data_from_multiple_datasets(datasets, 
+def prepare_folded_data_from_multiple_datasets(datasets,
                                                folds,
-                                               add_extra_atom_attribute,
-                                               add_extra_bond_attribute,
-                                               differentiate_atom_type,
-                                               differentiate_bond_type,
+                                               add_extra_atom_attribute=True,
+                                               add_extra_bond_attribute=True,
+                                               differentiate_atom_type=True,
+                                               differentiate_bond_type=True,
                                                padding=True,
                                                padding_final_size=20,
                                                prediction_task="Hf298(kcal/mol)"):
-
     folded_datasets = []
     test_data_datasets = []
     for host, db, table, testing_ratio in datasets:
-        X, y, _ = get_data_from_db(host,
-                                   db,
-                                   table,
-                                   add_extra_atom_attribute,
-                                   add_extra_bond_attribute,
-                                   differentiate_atom_type,
-                                   differentiate_bond_type,
-                                   padding,
-                                   padding_final_size,
-                                   prediction_task)
+        X, y, _ = get_data_from_db(host, db, table, prediction_task=prediction_task)
+
+        # At this point, X just contains molecule objects,
+        # so convert them to tensors
+        X = [get_molecule_tensor(mol,
+                                 add_extra_atom_attribute=add_extra_atom_attribute,
+                                 add_extra_bond_attribute=add_extra_bond_attribute,
+                                 differentiate_atom_type=differentiate_atom_type,
+                                 differentiate_bond_type=differentiate_bond_type,
+                                 padding=padding,
+                                 padding_final_size=padding_final_size)
+             for mol in X]
 
         logging.info('Splitting dataset with testing ratio of {0}...'.format(testing_ratio))
         split_data = split_test_from_train_and_val(X,
@@ -174,29 +158,30 @@ def prepare_folded_data_from_multiple_datasets(datasets,
     return X_test, y_test, folded_Xs, folded_ys
 
 
-def prepare_full_train_data_from_multiple_datasets(datasets, 
-                                                   add_extra_atom_attribute,
-                                                   add_extra_bond_attribute,
-                                                   differentiate_atom_type,
-                                                   differentiate_bond_type,
+def prepare_full_train_data_from_multiple_datasets(datasets,
+                                                   add_extra_atom_attribute=True,
+                                                   add_extra_bond_attribute=True,
+                                                   differentiate_atom_type=True,
+                                                   differentiate_bond_type=True,
                                                    padding=True,
                                                    padding_final_size=20,
                                                    prediction_task="Hf298(kcal/mol)",
                                                    save_meta=True):
-
     test_data_datasets = []
     train_datasets = []
     for host, db, table, testing_ratio in datasets:
-        (X, y, smis) = get_data_from_db(host,
-                                        db,
-                                        table,
-                                        add_extra_atom_attribute,
-                                        add_extra_bond_attribute,
-                                        differentiate_atom_type,
-                                        differentiate_bond_type,
-                                        padding,
-                                        padding_final_size,
-                                        prediction_task)
+        X, y, smis = get_data_from_db(host, db, table, prediction_task=prediction_task)
+
+        # At this point, X just contains molecule objects,
+        # so convert them to tensors
+        X = [get_molecule_tensor(mol,
+                                 add_extra_atom_attribute=add_extra_atom_attribute,
+                                 add_extra_bond_attribute=add_extra_bond_attribute,
+                                 differentiate_atom_type=differentiate_atom_type,
+                                 differentiate_bond_type=differentiate_bond_type,
+                                 padding=padding,
+                                 padding_final_size=padding_final_size)
+             for mol in X]
 
         logging.info('Splitting dataset with testing ratio of {0}...'.format(testing_ratio))
         split_data = split_test_from_train_and_val(X,
