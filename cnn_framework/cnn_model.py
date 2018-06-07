@@ -64,30 +64,21 @@ def build_model(embedding_size=512, attribute_vector_size=33, depth=5,
     return model
 
 
-def train_model(model, 
-                X_train,
-                y_train,
-                X_inner_val,
-                y_inner_val,
-                X_test,
-                y_test,
-                X_outer_val=None,
-                y_outer_val=None,
-                nb_epoch=0,
-                batch_size=50,
-                lr_func='0.01',
-                patience=10):
+def train_model(model, X_train, y_train, X_inner_val, y_inner_val, X_test, y_test, X_outer_val=None, y_outer_val=None,
+                nb_epoch=0, batch_size=50, lr_func='0.01', patience=10, load_from_disk=False):
     """
-    inputs:
-        model - a Keras model
+    Inputs:
+        model - A Keras model
         data - X_train, X_inner_val, X_outer_val, y_train, y_inner_val, y_outer_val, X_test, y_test
-        nb_epoch - number of epochs to train for
-        lr_func - string which is evaluated with 'epoch' to produce the learning
+        nb_epoch - Number of epochs to train for
+        lr_func - String which is evaluated with 'epoch' to produce the learning
                 rate at each epoch
-        patience - number of epochs to wait when no progress is being made in
+        patience - Number of epochs to wait when no progress is being made in
                 the validation loss
+        load_from_disk - Data is not stored in memory, so load it from disk for each batch
+                X_train, etc. contain the file names in this case
 
-    outputs:
+    Outputs:
         model - a trained Keras model
         loss - list of training losses corresponding to each epoch
         inner_val_loss - list of validation losses corresponding to each epoch
@@ -122,8 +113,13 @@ def train_model(model,
                 start = batch_idx * batch_size
                 end = min(start + batch_size, training_size)
 
-                single_mol_as_array = np.array(X_train[training_order[start:end]])
-                single_y_as_array = np.array(y_train[training_order[start:end]])
+                X_train_batch = X_train[training_order[start:end]]
+                y_train_batch = y_train[training_order[start:end]]
+                if load_from_disk:
+                    X_train_batch = [np.load(f) for f in X_train_batch]
+
+                single_mol_as_array = np.asarray(X_train_batch)
+                single_y_as_array = np.asarray(y_train_batch)
                 sloss = model.train_on_batch(single_mol_as_array, single_y_as_array)
                 this_loss.append(sloss)
 
@@ -133,8 +129,13 @@ def train_model(model,
             # Run through testing set
             logging.info('Inner Validating..')
             for j in range(len(X_inner_val)):
-                single_mol_as_array = np.array(X_inner_val[j:j+1])
-                single_y_as_array = np.reshape(y_inner_val[j], (1, -1))
+                X_inner_val_batch = X_inner_val[j:(j+1)]
+                y_inner_val_batch = y_inner_val[j:(j+1)]
+                if load_from_disk:
+                    X_inner_val_batch = [np.load(f) for f in X_inner_val_batch]
+
+                single_mol_as_array = np.asarray(X_inner_val_batch)
+                single_y_as_array = np.asarray(y_inner_val_batch)
                 sloss = model.test_on_batch(single_mol_as_array, single_y_as_array)
                 this_inner_val_loss.append(sloss)
 
@@ -179,7 +180,7 @@ def train_model(model,
     return model, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss
 
 
-def evaluate_mean_tst_loss(model, X_test, y_test):
+def evaluate_mean_tst_loss(model, X_test, y_test, load_from_disk=False):
 
     """
     Given final model and test examples
@@ -187,8 +188,13 @@ def evaluate_mean_tst_loss(model, X_test, y_test):
     """
     test_losses = []
     for j in range(len(X_test)):
-        single_mol_as_array = np.array(X_test[j:j+1])
-        single_y_as_array = np.reshape(y_test[j], (1, -1))
+        X_test_batch = X_test[j:(j+1)]
+        y_test_batch = y_test[j:(j+1)]
+        if load_from_disk:
+            X_test_batch = [np.load(f) for f in X_test_batch]
+        
+        single_mol_as_array = np.asarray(X_test_batch)
+        single_y_as_array = np.asarray(y_test_batch)
         sloss = model.test_on_batch(single_mol_as_array, single_y_as_array)
         test_losses.append(sloss)
 
