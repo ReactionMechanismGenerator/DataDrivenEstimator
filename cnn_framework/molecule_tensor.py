@@ -21,7 +21,9 @@ def get_molecule_tensor(molecule,
                         add_extra_atom_attribute=True,
                         add_extra_bond_attribute=True,
                         differentiate_atom_type=True,
-                        differentiate_bond_type=True):
+                        differentiate_bond_type=True,
+                        padding=False,
+                        padding_final_size=20):
     """
     This method takes an RMG `Molecule` object and vectorizes
     it into a numpy molecule tensor with dimension:
@@ -52,6 +54,9 @@ def get_molecule_tensor(molecule,
                 j = non_H_atoms.index(bonded_atom)
                 molecule_tensor[i, j, :] = np.concatenate((atom_attributes_dict[bonded_atom],
                                                            bond_attributes_dict[bond]))
+
+    if padding:
+        molecule_tensor = pad_molecule_tensor(molecule_tensor, padding_final_size)
 
     return molecule_tensor
 
