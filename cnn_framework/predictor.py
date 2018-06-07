@@ -15,23 +15,29 @@ import json
 
 
 class Predictor(object):
-
     def __init__(self, input_file=None, datasets_file=None):
-
         self.model = None
-        if input_file:
-            self.input_file = input_file
+        self.input_file = input_file
+        self.datasets_file = datasets_file
+        self.datasets = None
+        self.add_extra_atom_attribute = None
+        self.add_extra_bond_attribute = None
+        self.differentiate_atom_type = None
+        self.differentiate_bond_type = None
+        self.padding = None
+        self.padding_final_size = None
+        self.prediction_task = None
+
+        if self.input_file is not None:
             read_input_file(self.input_file, self)
 
-        if datasets_file:
-            self.datasets_file = datasets_file
+        if self.datasets_file is not None:
             self.specify_datasets(self.datasets_file)
 
     def build_model(self):
         """
         This method is intended to provide a way to build default model
         """
-
         self.model = build_model()
 
     def load_input(self, input_file):
@@ -45,7 +51,7 @@ class Predictor(object):
 
     def specify_datasets(self, datasets_file_path=None):
         """
-        This method specify which datasets to use for training
+        This method specifies which datasets to use for training
         """
         self.datasets = []
         with open(datasets_file_path, 'r') as f_in:
@@ -57,10 +63,7 @@ class Predictor(object):
                     self.datasets.append((host, db, table, float(testing_ratio)))
 
     def kfcv_train(self, folds, lr_func, save_model_path,
-                   batch_size=1,
-                   nb_epoch=150,
-                   patience=10):
-
+                   batch_size=1, nb_epoch=150, patience=10):
         # prepare data for training
         folded_data = prepare_folded_data_from_multiple_datasets(self.datasets, folds,
                                                                  self.add_extra_atom_attribute,
@@ -131,10 +134,7 @@ class Predictor(object):
                           full_folds_loss_report_path)
 
     def full_train(self, lr_func, save_model_path,
-                   batch_size=1,
-                   nb_epoch=150,
-                   patience=10):
-
+                   batch_size=1, nb_epoch=150, patience=10):
         # prepare data for training
         folded_data = prepare_full_train_data_from_multiple_datasets(self.datasets,
                                                                      self.add_extra_atom_attribute,
@@ -185,11 +185,7 @@ class Predictor(object):
         fpath = os.path.join(save_model_path, 'full_train')
         self.save_model(loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath)
 
-    def kfcv_batch_train(self, folds,
-                         batch_size=50,
-                         nb_epoch=150,
-                         patience=10):
-
+    def kfcv_batch_train(self, folds, batch_size=50, nb_epoch=150, patience=10):
         # prepare data for training
         folded_data = prepare_folded_data_from_multiple_datasets(self.datasets, folds,
                                                                  self.add_extra_atom_attribute,
@@ -202,10 +198,6 @@ class Predictor(object):
 
         X_test, y_test, folded_Xs, folded_ys = folded_data
 
-        losses = []
-        inner_val_losses = []
-        outer_val_losses = []
-        test_losses = []
         for fold in range(folds):
             data = prepare_data_one_fold(folded_Xs,
                                          folded_ys,
@@ -243,7 +235,6 @@ class Predictor(object):
             self.reset_model()
 
     def load_parameters(self, param_path=None):
-
         if not param_path:
             param_path = os.path.join(os.path.dirname(rmgpy.__file__),
                                       'cnn_framework',
@@ -255,15 +246,12 @@ class Predictor(object):
         self.model.load_weights(param_path)
 
     def reset_model(self):
-
         self.model = reset_model(self.model)
 
     def save_model(self, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath):
-
         save_model(self.model, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath)
 
     def predict(self, molecule):
-
         molecule_tensor = get_molecule_tensor(molecule,
                                               self.add_extra_atom_attribute,
                                               self.add_extra_bond_attribute,
