@@ -17,7 +17,7 @@ def parse_command_line_arguments():
     sensible, parses them, and returns them.
     """
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-i', '--input', metavar='FILE', type=str,
                         nargs=1, help='a predictor training input file')
 
@@ -28,8 +28,8 @@ def parse_command_line_arguments():
     parser.add_argument('--save_tensors_dir', metavar='DIR',
                         help='Location to save tensors on disk (frees up memory)')
 
-    parser.add_argument('-f', '--folds', type=int,
-                        default=5, help='number of folds for training')
+    parser.add_argument('-f', '--folds', type=int, default=5,
+                        help='number of folds for training')
 
     parser.add_argument('-tr', '--train_ratio', type=float, default=0.9,
                         help='Fraction of training data to use for actual training, rest is early-stopping validation')
@@ -38,20 +38,21 @@ def parse_command_line_arguments():
                         help='Fraction of data to use for testing. If loading data from database,'
                              ' test ratios are specified in datasets file')
 
-    parser.add_argument('-t', '--train_mode', type=str,
-                        help='train mode: currently support in_house and keras')
+    parser.add_argument('-t', '--train_mode', type=str, default='full_train',
+                        help='train mode: currently support in_house and keras for k-fold cross-validation,'
+                             ' and full_train for full training')
 
-    parser.add_argument('-bs', '--batch_size', type=int,
+    parser.add_argument('-bs', '--batch_size', type=int, default=1,
                         help='batch training size')
 
-    parser.add_argument('-lr', '--learning_rate', type=str,
-                        default='0.0007_30.0', help='two parameters for learning rate')
+    parser.add_argument('-lr', '--learning_rate', type=str, default='0.0007_30.0',
+                        help='two parameters for learning rate')
 
-    parser.add_argument('-ep', '--nb_epoch', type=int,
-                        default=150, help='number of epochs for training')
+    parser.add_argument('-ep', '--nb_epoch', type=int, default=150,
+                        help='number of epochs for training')
 
-    parser.add_argument('-pc', '--patience', type=int,
-                        default=10, help='number of consecutive epochs allowed for loss increase')
+    parser.add_argument('-pc', '--patience', type=int, default=10,
+                        help='number of consecutive epochs allowed for loss increase')
 
     return parser.parse_args()
 ################################################################################
