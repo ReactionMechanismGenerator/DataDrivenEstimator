@@ -299,14 +299,6 @@ class Predictor(object):
             self.reset_model()
 
     def load_parameters(self, param_path=None):
-        if not param_path:
-            param_path = os.path.join(os.path.dirname(rmgpy.__file__),
-                                      'cnn_framework',
-                                      'data',
-                                      'weights',
-                                      'polycyclic_enthalpy_weights.h5'
-                                      )
-
         self.model.load_weights(param_path)
 
     def reset_model(self):
