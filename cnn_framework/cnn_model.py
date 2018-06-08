@@ -106,15 +106,22 @@ def train_model(model, X_train, y_train, X_inner_val, y_inner_val, X_test, y_tes
             training_size = len(X_train)
             batch_num = int(np.ceil(float(training_size) / batch_size))
 
-            training_order = range(training_size)
+            training_order = np.arange(training_size)
             np.random.shuffle(training_order)
             for batch_idx in range(batch_num):
 
                 start = batch_idx * batch_size
                 end = min(start + batch_size, training_size)
+                idxs = training_order[start:end]
 
-                X_train_batch = X_train[training_order[start:end]]
-                y_train_batch = y_train[training_order[start:end]]
+                if isinstance(X_train, np.ndarray):
+                    X_train_batch = X_train[idxs]
+                else:
+                    X_train_batch = [X_train[idx] for idx in idxs]
+                if isinstance(y_train, np.ndarray):
+                    y_train_batch = y_train[idxs]
+                else:
+                    y_train_batch = [y_train[idx] for idx in idxs]
                 if load_from_disk:
                     X_train_batch = [np.load(f) for f in X_train_batch]
 
