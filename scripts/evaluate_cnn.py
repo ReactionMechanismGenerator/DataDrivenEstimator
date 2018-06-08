@@ -20,8 +20,9 @@ def parse_command_line_arguments():
     """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--datasets', metavar='FILE', type=str,
-                        help='path to da file specifies on which datasets to test')
+    parser.add_argument('-d', '--data', metavar='FILE', type=str,
+                        help='A file specifying which datasets to test on. Alternatively, a space-separated .csv file'
+                             ' with SMILES and output(s) in the first and subsequent columns, respectively.')
 
     parser.add_argument('-m', '--model', type=str,
                         help='path to the testing model')
@@ -141,35 +142,51 @@ def display_result(result_df, prediction_task="Hf298(kcal/mol)"):
     return count, mean, std
 
 
-def validate(datasets_file, model):
+def validate(data_file, model):
 
     # load cnn predictor
     predictor = prepare_predictor(model)
 
-    datasets = read_datasets_file(datasets_file)
-
-    evaluation_results = {}
-    for host, db_name, collection_name in datasets:
-        
-        print("\nhost: {0}, db: {1}, collection: {2}".format(host, db_name, collection_name))
-        
-        # prepare data for testing
-        smiles_list, ys = prepare_data(host, db_name, collection_name,
-                                       prediction_task=predictor.prediction_task)
-
-        # Do the predictions
+    if data_file.endswith('.csv'):
+        smiles_list, ys = [], []
+        with open(data_file) as df:
+            for line in df:
+                line_split = line.strip().split()
+                smi = line_split[0]
+                y = [float(yi) for yi in line_split[1:]]
+                smiles_list.append(smi)
+                ys.append(y)
         ys_pred = make_predictions(predictor, smiles_list)
-
-        # evaluate performance
         result_df = evaluate(smiles_list, ys, ys_pred, prediction_task=predictor.prediction_task)
-
-        # display result
         count, mean, std = display_result(result_df, prediction_task=predictor.prediction_task)
-        
-        table = '/'.join([host, db_name, collection_name])
-        evaluation_results[table] = {"count": count,
-                                     "MAE": mean,
-                                     "MAE std": std}
+        evaluation_results = {data_file: {"count": count,
+                                          "MAE": mean,
+                                          "MAE std": std}}
+    else:
+        datasets = read_datasets_file(data_file)
+
+        evaluation_results = {}
+        for host, db_name, collection_name in datasets:
+
+            print("\nhost: {0}, db: {1}, collection: {2}".format(host, db_name, collection_name))
+
+            # prepare data for testing
+            smiles_list, ys = prepare_data(host, db_name, collection_name,
+                                           prediction_task=predictor.prediction_task)
+
+            # Do the predictions
+            ys_pred = make_predictions(predictor, smiles_list)
+
+            # evaluate performance
+            result_df = evaluate(smiles_list, ys, ys_pred, prediction_task=predictor.prediction_task)
+
+            # display result
+            count, mean, std = display_result(result_df, prediction_task=predictor.prediction_task)
+
+            table = '/'.join([host, db_name, collection_name])
+            evaluation_results[table] = {"count": count,
+                                         "MAE": mean,
+                                         "MAE std": std}
 
     return evaluation_results
 
@@ -178,9 +195,9 @@ def main():
 
     args = parse_command_line_arguments()
 
-    datasets_file = args.datasets
+    data_file = args.data
     model = args.model
-    evaluation_results = validate(datasets_file, model)
+    evaluation_results = validate(data_file, model)
 
     with open('evaluation_results.json', 'w') as f_out:
         json.dump(evaluation_results, f_out, indent=4, sort_keys=True)
