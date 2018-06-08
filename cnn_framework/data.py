@@ -285,6 +285,7 @@ def prepare_folded_data_from_file(datafile,
                                                    differentiate_bond_type=differentiate_bond_type,
                                                    padding=padding,
                                                    padding_final_size=padding_final_size,
+                                                   save_meta=False,
                                                    save_tensors_dir=save_tensors_dir,
                                                    testing_ratio=testing_ratio)
     X_test, y_test, X_train_and_val, y_train_and_val = split_data
@@ -299,6 +300,7 @@ def prepare_full_train_data_from_file(datafile,
                                       differentiate_bond_type=True,
                                       padding=True,
                                       padding_final_size=20,
+                                      save_meta=True,
                                       save_tensors_dir=None,
                                       testing_ratio=0.0):
     smiles, y = [], []
@@ -345,9 +347,21 @@ def prepare_full_train_data_from_file(datafile,
     logging.info('Splitting dataset with testing ratio of {}...'.format(testing_ratio))
     split_data = split_test_from_train_and_val(X,
                                                y,
+                                               extra_data=smiles,
                                                shuffle_seed=0,
                                                testing_ratio=testing_ratio)
-    return split_data
+
+    X_test, y_test, X_train, y_train, smis_test, smis_train = split_data
+
+    if save_meta:
+        smis_test_string = '\n'.join(smis_test)
+        smis_train_string = '\n'.join(smis_train)
+        with open('{}_smis_test.txt'.format(datafile), 'w') as f_in:
+            f_in.write(smis_test_string)
+        with open('{}_smis_train.txt'.format(datafile), 'w') as f_in:
+            f_in.write(smis_train_string)
+    
+    return X_test, y_test, X_train, y_train
 
 
 @attr('helper')
