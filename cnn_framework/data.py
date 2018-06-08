@@ -307,10 +307,11 @@ def prepare_full_train_data_from_file(datafile,
     with open(datafile) as df:
         for line in df:
             line_split = line.strip().split()
-            smi = line_split[0]
-            ysingle = [float(yi) for yi in line_split[1:]]
-            smiles.append(smi)
-            y.append(ysingle)
+            if line_split:
+                smi = line_split[0]
+                ysingle = [float(yi) for yi in line_split[1:]]
+                smiles.append(smi)
+                y.append(ysingle)
     y = np.array(y).astype(np.float32)
 
     logging.info('Loading data from {}...'.format(datafile))
