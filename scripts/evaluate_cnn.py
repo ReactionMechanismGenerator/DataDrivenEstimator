@@ -146,10 +146,11 @@ def validate(data_file, input_file, weights_file):
         with open(data_file) as df:
             for line in df:
                 line_split = line.strip().split()
-                smi = line_split[0]
-                y = [float(yi) for yi in line_split[1:]]
-                smiles_list.append(smi)
-                ys.append(y)
+                if line_split:
+                    smi = line_split[0]
+                    y = [float(yi) for yi in line_split[1:]]
+                    smiles_list.append(smi)
+                    ys.append(y)
         ys_pred = make_predictions(predictor, smiles_list)
         result_df = evaluate(smiles_list, ys, ys_pred, prediction_task=predictor.prediction_task)
         count, mean, std = display_result(result_df, prediction_task=predictor.prediction_task)
