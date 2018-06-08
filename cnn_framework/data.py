@@ -7,6 +7,7 @@ import numpy as np
 from cnn_framework.molecule_tensor import get_molecule_tensor
 from pymongo import MongoClient
 from nose.plugins.attrib import attr
+from rmgpy.molecule import Molecule
 
 
 def get_host_info(host):
@@ -42,7 +43,6 @@ def get_db_mols(host, db_name, collection_name):
 
 
 def get_data_from_db(host, db_name, collection_name, prediction_task="Hf298(kcal/mol)"):
-    from rmgpy.molecule import Molecule
     # connect to db and query
     host_connection_url, port = get_host_info(host)
     client = MongoClient(host_connection_url, port)
@@ -266,6 +266,88 @@ def prepare_full_train_data_from_multiple_datasets(datasets,
             y_test.extend(y_test_1)
 
     return X_test, y_test, X_train, y_train
+
+
+def prepare_folded_data_from_file(datafile,
+                                  folds,
+                                  add_extra_atom_attribute=True,
+                                  add_extra_bond_attribute=True,
+                                  differentiate_atom_type=True,
+                                  differentiate_bond_type=True,
+                                  padding=True,
+                                  padding_final_size=20,
+                                  save_tensors_dir=None,
+                                  testing_ratio=0.0):
+    split_data = prepare_full_train_data_from_file(datafile,
+                                                   add_extra_atom_attribute=add_extra_atom_attribute,
+                                                   add_extra_bond_attribute=add_extra_bond_attribute,
+                                                   differentiate_atom_type=differentiate_atom_type,
+                                                   differentiate_bond_type=differentiate_bond_type,
+                                                   padding=padding,
+                                                   padding_final_size=padding_final_size,
+                                                   save_tensors_dir=save_tensors_dir,
+                                                   testing_ratio=testing_ratio)
+    X_test, y_test, X_train_and_val, y_train_and_val = split_data
+    folded_Xs, folded_ys = prepare_folded_data(X_train_and_val, y_train_and_val, folds, shuffle_seed=2)
+    return X_test, y_test, folded_Xs, folded_ys
+
+
+def prepare_full_train_data_from_file(datafile,
+                                      add_extra_atom_attribute=True,
+                                      add_extra_bond_attribute=True,
+                                      differentiate_atom_type=True,
+                                      differentiate_bond_type=True,
+                                      padding=True,
+                                      padding_final_size=20,
+                                      save_tensors_dir=None,
+                                      testing_ratio=0.0):
+    smiles, y = [], []
+    with open(datafile) as df:
+        for line in df:
+            line_split = line.strip().split()
+            smi = line_split[0]
+            ysingle = [float(yi) for yi in line_split[1:]]
+            smiles.append(smi)
+            y.append(ysingle)
+    y = np.array(y).astype(np.float32)
+
+    logging.info('Loading data from {}...'.format(datafile))
+    if save_tensors_dir is not None:
+        if not os.path.exists(save_tensors_dir):
+            os.makedirs(save_tensors_dir)
+
+        X = []
+        for fidx, smi in enumerate(smiles):
+            mol = Molecule().fromSMILES(smi)
+            x = get_molecule_tensor(mol,
+                                    add_extra_atom_attribute=add_extra_atom_attribute,
+                                    add_extra_bond_attribute=add_extra_bond_attribute,
+                                    differentiate_atom_type=differentiate_atom_type,
+                                    differentiate_bond_type=differentiate_bond_type,
+                                    padding=padding,
+                                    padding_final_size=padding_final_size)
+            fname = os.path.abspath(os.path.join(save_tensors_dir, '{}.npy'.format(fidx)))
+            np.save(fname, x)
+            X.append(fname)
+    else:
+        X = []
+        for smi in smiles:
+            mol = Molecule().fromSMILES(smi)
+            x = get_molecule_tensor(mol,
+                                    add_extra_atom_attribute=add_extra_atom_attribute,
+                                    add_extra_bond_attribute=add_extra_bond_attribute,
+                                    differentiate_atom_type=differentiate_atom_type,
+                                    differentiate_bond_type=differentiate_bond_type,
+                                    padding=padding,
+                                    padding_final_size=padding_final_size)
+            X.append(x)
+
+    logging.info('Splitting dataset with testing ratio of {}...'.format(testing_ratio))
+    split_data = split_test_from_train_and_val(X,
+                                               y,
+                                               shuffle_seed=0,
+                                               testing_ratio=testing_ratio)
+    return split_data
 
 
 @attr('helper')
