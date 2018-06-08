@@ -124,7 +124,8 @@ class Predictor(object):
                                              nb_epoch=nb_epoch,
                                              batch_size=batch_size,
                                              lr_func=lr_func,
-                                             patience=patience)
+                                             patience=patience,
+                                             load_from_disk=self.get_data_from_file)
 
             model, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss = train_model_output
 
@@ -218,7 +219,8 @@ class Predictor(object):
                                          nb_epoch=nb_epoch,
                                          batch_size=batch_size,
                                          lr_func=lr_func,
-                                         patience=patience)
+                                         patience=patience,
+                                         load_from_disk=self.get_data_from_file)
 
         model, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss = train_model_output
 

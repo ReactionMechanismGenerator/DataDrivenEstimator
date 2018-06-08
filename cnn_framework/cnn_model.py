@@ -153,10 +153,12 @@ def train_model(model, X_train, y_train, X_inner_val, y_inner_val, X_test, y_tes
             # report outer_val and test loss
             if i % 1 == 0:
                 if X_outer_val:
-                    mean_outer_val_loss = evaluate_mean_tst_loss(model, X_outer_val, y_outer_val)
+                    mean_outer_val_loss = evaluate_mean_tst_loss(model, X_outer_val, y_outer_val,
+                                                                 load_from_disk=load_from_disk)
                     logging.info('mse outer_val_loss: {}'.format(mean_outer_val_loss))
 
-                mean_test_loss = evaluate_mean_tst_loss(model, X_test, y_test)
+                mean_test_loss = evaluate_mean_tst_loss(model, X_test, y_test,
+                                                        load_from_disk=load_from_disk)
                 logging.info('mse test_loss: {}'.format(mean_test_loss))
 
             # Check progress
@@ -176,10 +178,12 @@ def train_model(model, X_train, y_train, X_inner_val, y_inner_val, X_test, y_tes
 
         # evaluate outer validation loss and test loss upon final model
         if X_outer_val:
-            mean_outer_val_loss = evaluate_mean_tst_loss(model, X_outer_val, y_outer_val)
+            mean_outer_val_loss = evaluate_mean_tst_loss(model, X_outer_val, y_outer_val,
+                                                         load_from_disk=load_from_disk)
         else:
             mean_outer_val_loss = None
-        mean_test_loss = evaluate_mean_tst_loss(model, X_test, y_test)
+        mean_test_loss = evaluate_mean_tst_loss(model, X_test, y_test,
+                                                load_from_disk=load_from_disk)
 
     except KeyboardInterrupt:
         logging.info('User terminated training early (intentionally)')
