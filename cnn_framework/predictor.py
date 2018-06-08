@@ -8,17 +8,18 @@ import os
 import rmgpy
 import numpy as np
 from cnn_framework.data import (prepare_data_one_fold, prepare_folded_data_from_multiple_datasets,
-                                prepare_full_train_data_from_multiple_datasets, split_inner_val_from_train_data)
+                                prepare_full_train_data_from_multiple_datasets, split_inner_val_from_train_data,
+                                prepare_folded_data_from_file, prepare_full_train_data_from_file)
 import logging
 from keras.callbacks import EarlyStopping
 import json
 
 
 class Predictor(object):
-    def __init__(self, input_file=None, datasets_file=None, save_tensors_dir=None):
+    def __init__(self, input_file=None, data_file=None, save_tensors_dir=None):
         self.model = None
         self.input_file = input_file
-        self.datasets_file = datasets_file
+        self.data_file = data_file
         self.save_tensors_dir = save_tensors_dir
         self.datasets = None
         self.add_extra_atom_attribute = None
@@ -32,8 +33,12 @@ class Predictor(object):
         if self.input_file is not None:
             read_input_file(self.input_file, self)
 
-        if self.datasets_file is not None:
-            self.specify_datasets(self.datasets_file)
+        self.get_data_from_file = False
+        if self.data_file is not None:
+            if self.data_file.endswith('.csv'):
+                self.get_data_from_file = True
+            else:
+                self.specify_datasets(self.data_file)
 
     def build_model(self):
         """
@@ -66,15 +71,25 @@ class Predictor(object):
     def kfcv_train(self, folds, lr_func, save_model_path,
                    batch_size=1, nb_epoch=150, patience=10):
         # prepare data for training
-        folded_data = prepare_folded_data_from_multiple_datasets(self.datasets, folds,
-                                                                 self.add_extra_atom_attribute,
-                                                                 self.add_extra_bond_attribute,
-                                                                 self.differentiate_atom_type,
-                                                                 self.differentiate_bond_type,
-                                                                 self.padding,
-                                                                 self.padding_final_size,
-                                                                 self.prediction_task,
-                                                                 self.save_tensors_dir)
+        if self.get_data_from_file:
+            folded_data = prepare_folded_data_from_file(self.data_file, folds,
+                                                        self.add_extra_atom_attribute,
+                                                        self.add_extra_bond_attribute,
+                                                        self.differentiate_atom_type,
+                                                        self.differentiate_bond_type,
+                                                        self.padding,
+                                                        self.padding_final_size,
+                                                        self.save_tensors_dir)
+        else:
+            folded_data = prepare_folded_data_from_multiple_datasets(self.datasets, folds,
+                                                                     self.add_extra_atom_attribute,
+                                                                     self.add_extra_bond_attribute,
+                                                                     self.differentiate_atom_type,
+                                                                     self.differentiate_bond_type,
+                                                                     self.padding,
+                                                                     self.padding_final_size,
+                                                                     self.prediction_task,
+                                                                     self.save_tensors_dir)
 
         X_test, y_test, folded_Xs, folded_ys = folded_data
 
@@ -138,17 +153,27 @@ class Predictor(object):
     def full_train(self, lr_func, save_model_path,
                    batch_size=1, nb_epoch=150, patience=10):
         # prepare data for training
-        folded_data = prepare_full_train_data_from_multiple_datasets(self.datasets,
-                                                                     self.add_extra_atom_attribute,
-                                                                     self.add_extra_bond_attribute,
-                                                                     self.differentiate_atom_type,
-                                                                     self.differentiate_bond_type,
-                                                                     self.padding,
-                                                                     self.padding_final_size,
-                                                                     self.prediction_task,
-                                                                     self.save_tensors_dir)
+        if self.get_data_from_file:
+            split_data = prepare_full_train_data_from_file(self.data_file,
+                                                           self.add_extra_atom_attribute,
+                                                           self.add_extra_bond_attribute,
+                                                           self.differentiate_atom_type,
+                                                           self.differentiate_bond_type,
+                                                           self.padding,
+                                                           self.padding_final_size,
+                                                           self.save_tensors_dir)
+        else:
+            split_data = prepare_full_train_data_from_multiple_datasets(self.datasets,
+                                                                        self.add_extra_atom_attribute,
+                                                                        self.add_extra_bond_attribute,
+                                                                        self.differentiate_atom_type,
+                                                                        self.differentiate_bond_type,
+                                                                        self.padding,
+                                                                        self.padding_final_size,
+                                                                        self.prediction_task,
+                                                                        self.save_tensors_dir)
 
-        X_test, y_test, X_train, y_train = folded_data
+        X_test, y_test, X_train, y_train = split_data
 
         losses = []
         inner_val_losses = []
@@ -190,15 +215,25 @@ class Predictor(object):
 
     def kfcv_batch_train(self, folds, batch_size=50, nb_epoch=150, patience=10):
         # prepare data for training
-        folded_data = prepare_folded_data_from_multiple_datasets(self.datasets, folds,
-                                                                 self.add_extra_atom_attribute,
-                                                                 self.add_extra_bond_attribute,
-                                                                 self.differentiate_atom_type,
-                                                                 self.differentiate_bond_type,
-                                                                 self.padding,
-                                                                 self.padding_final_size,
-                                                                 self.prediction_task,
-                                                                 self.save_tensors_dir)
+        if self.get_data_from_file:
+            folded_data = prepare_folded_data_from_file(self.data_file, folds,
+                                                        self.add_extra_atom_attribute,
+                                                        self.add_extra_bond_attribute,
+                                                        self.differentiate_atom_type,
+                                                        self.differentiate_bond_type,
+                                                        self.padding,
+                                                        self.padding_final_size,
+                                                        self.save_tensors_dir)
+        else:
+            folded_data = prepare_folded_data_from_multiple_datasets(self.datasets, folds,
+                                                                     self.add_extra_atom_attribute,
+                                                                     self.add_extra_bond_attribute,
+                                                                     self.differentiate_atom_type,
+                                                                     self.differentiate_bond_type,
+                                                                     self.padding,
+                                                                     self.padding_final_size,
+                                                                     self.prediction_task,
+                                                                     self.save_tensors_dir)
 
         X_test, y_test, folded_Xs, folded_ys = folded_data
 
