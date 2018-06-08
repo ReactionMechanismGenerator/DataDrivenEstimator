@@ -88,7 +88,6 @@ def prepare_predictor(model):
     predictor.load_input(predictor_input)
 
     param_path = os.path.join(model,
-                              'saved_model',
                               'full_train.h5')
     predictor.load_parameters(param_path)
 
