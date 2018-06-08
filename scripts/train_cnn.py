@@ -21,14 +21,22 @@ def parse_command_line_arguments():
     parser.add_argument('-i', '--input', metavar='FILE', type=str,
                         nargs=1, help='a predictor training input file')
 
-    parser.add_argument('-d', '--datasets', metavar='FILE', type=str,
-                        nargs='+', help='a file specifies on which datasets to train')
+    parser.add_argument('-d', '--data', metavar='FILE', type=str,
+                        help='A file specifying which datasets to train on. Alternatively, a space-separated .csv file'
+                             ' with SMILES and output(s) in the first and subsequent columns, respectively.')
 
     parser.add_argument('--save_tensors_dir', metavar='DIR',
                         help='Location to save tensors on disk (frees up memory)')
 
     parser.add_argument('-f', '--folds', type=int,
                         default=5, help='number of folds for training')
+
+    parser.add_argument('-tr', '--train_ratio', type=float, default=0.9,
+                        help='Fraction of training data to use for actual training, rest is early-stopping validation')
+
+    parser.add_argument('-te', '--test_ratio', type=float, default=0.0,
+                        help='Fraction of data to use for testing. If loading data from database,'
+                             ' test ratios are specified in datasets file')
 
     parser.add_argument('-t', '--train_mode', type=str,
                         help='train mode: currently support in_house and keras')
@@ -111,9 +119,11 @@ if __name__ == '__main__':
 
     args = parse_command_line_arguments()
     input_file = args.input[0]
-    datasets_file = args.datasets[0]
+    data_file = args.data
     save_tensors_dir = args.save_tensors_dir
     folds = args.folds
+    training_ratio = args.train_ratio
+    testing_ratio = args.test_ratio
     train_mode = args.train_mode
     batch_size = args.batch_size
     nb_epoch = args.nb_epoch
@@ -132,7 +142,7 @@ if __name__ == '__main__':
     rmg = RMG()
     rmg.logHeader()
 
-    predictor = Predictor(datasets_file=datasets_file, save_tensors_dir=save_tensors_dir)
+    predictor = Predictor(data_file=data_file, save_tensors_dir=save_tensors_dir)
     predictor.load_input(input_file)
 
     lr_func = "float({0} * np.exp(- epoch / {1}))".format(lr0, lr1)
@@ -146,16 +156,22 @@ if __name__ == '__main__':
                              lr_func=lr_func,
                              save_model_path=save_model_path,
                              nb_epoch=nb_epoch,
-                             patience=patience)
+                             patience=patience,
+                             training_ratio=training_ratio,
+                             testing_ratio=testing_ratio)
     elif train_mode == 'keras':
         predictor.kfcv_batch_train(folds=folds, batch_size=batch_size,
                                    nb_epoch=nb_epoch,
-                                   patience=patience)
+                                   patience=patience,
+                                   training_ratio=training_ratio,
+                                   testing_ratio=testing_ratio)
     elif train_mode == 'full_train':
         predictor.full_train(batch_size=batch_size,
                              lr_func=lr_func,
                              save_model_path=save_model_path,
                              nb_epoch=nb_epoch,
-                             patience=patience)
+                             patience=patience,
+                             training_ratio=training_ratio,
+                             testing_ratio=testing_ratio)
     else:
         raise Exception('Currently not supporting train mode: {0}'.format(train_mode))
