@@ -31,6 +31,9 @@ def parse_command_line_arguments():
     parser.add_argument('--save_tensors_dir', metavar='DIR',
                         help='Location to save tensors on disk (frees up memory)')
 
+    parser.add_argument('--keep_tensors', action='store_true',
+                        help='Do not delete directory containing tensors at end of job')
+
     parser.add_argument('-f', '--folds', type=int, default=5,
                         help='number of folds for training')
 
@@ -126,6 +129,7 @@ if __name__ == '__main__':
     data_file = args.data
     out_dir = args.out_dir
     save_tensors_dir = args.save_tensors_dir
+    keep_tensors = args.keep_tensors
     folds = args.folds
     training_ratio = args.train_ratio
     testing_ratio = args.test_ratio
@@ -148,7 +152,10 @@ if __name__ == '__main__':
     rmg = RMG()
     rmg.logHeader()
 
-    predictor = Predictor(data_file=data_file, save_tensors_dir=save_tensors_dir, out_dir=out_dir)
+    predictor = Predictor(data_file=data_file,
+                          save_tensors_dir=save_tensors_dir,
+                          keep_tensors=keep_tensors,
+                          out_dir=out_dir)
     predictor.load_input(input_file)
 
     lr_func = "float({0} * np.exp(- epoch / {1}))".format(lr0, lr1)

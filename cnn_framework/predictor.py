@@ -5,6 +5,7 @@ from cnn_framework.cnn_model import build_model, train_model, reset_model, save_
 from cnn_framework.input import read_input_file
 from cnn_framework.molecule_tensor import get_molecule_tensor, pad_molecule_tensor
 import os
+import shutil
 import rmgpy
 import numpy as np
 from cnn_framework.data import (prepare_data_one_fold, prepare_folded_data_from_multiple_datasets,
@@ -16,11 +17,12 @@ import json
 
 
 class Predictor(object):
-    def __init__(self, input_file=None, data_file=None, save_tensors_dir=None, out_dir=None):
+    def __init__(self, input_file=None, data_file=None, save_tensors_dir=None, keep_tensors=False, out_dir=None):
         self.model = None
         self.input_file = input_file
         self.data_file = data_file
         self.save_tensors_dir = save_tensors_dir
+        self.keep_tensors = keep_tensors
         self.out_dir = out_dir
         self.datasets = None
         self.add_extra_atom_attribute = None
@@ -155,6 +157,11 @@ class Predictor(object):
                           full_folds_mean_test_loss,
                           full_folds_loss_report_path)
 
+        # Delete tensor directory
+        if self.save_tensors_dir is not None:
+            if not self.keep_tensors:
+                shutil.rmtree(self.save_tensors_dir)
+
     def full_train(self, lr_func, save_model_path,
                    batch_size=1, nb_epoch=150, patience=10, training_ratio=0.9, testing_ratio=0.0):
         # prepare data for training
@@ -224,6 +231,11 @@ class Predictor(object):
         # save model and write report
         fpath = os.path.join(save_model_path, 'full_train')
         self.save_model(loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath)
+
+        # Delete tensor directory
+        if self.save_tensors_dir is not None:
+            if not self.keep_tensors:
+                shutil.rmtree(self.save_tensors_dir)
 
     def kfcv_batch_train(self, folds, batch_size=50, nb_epoch=150, patience=10, training_ratio=0.9, testing_ratio=0.0):
         # prepare data for training
@@ -308,6 +320,11 @@ class Predictor(object):
 
             # once finish training one fold, reset the model
             self.reset_model()
+
+        # Delete tensor directory
+        if self.save_tensors_dir is not None:
+            if not self.keep_tensors:
+                shutil.rmtree(self.save_tensors_dir)
 
     def load_parameters(self, param_path=None):
         self.model.load_weights(param_path)
