@@ -125,7 +125,7 @@ class Predictor(object):
                                              batch_size=batch_size,
                                              lr_func=lr_func,
                                              patience=patience,
-                                             load_from_disk=self.get_data_from_file)
+                                             load_from_disk=True if self.save_tensors_dir is not None else False)
 
             model, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss = train_model_output
 
@@ -220,7 +220,7 @@ class Predictor(object):
                                          batch_size=batch_size,
                                          lr_func=lr_func,
                                          patience=patience,
-                                         load_from_disk=self.get_data_from_file)
+                                         load_from_disk=True if self.save_tensors_dir is not None else False)
 
         model, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss = train_model_output
 
@@ -267,12 +267,13 @@ class Predictor(object):
         X_test, y_test, folded_Xs, folded_ys = folded_data
 
         # Data might be stored as file names
-        if isinstance(X_test[0], str):
-            dims = np.load(X_test[0]).shape
-            X_test_new = np.zeros((len(X_test),) + dims)
-            for i, fname in enumerate(X_test):
-                X_test_new[i] = np.load(fname)
-            X_test = X_test_new
+        if len(X_test) > 0:
+            if isinstance(X_test[0], str):
+                dims = np.load(X_test[0]).shape
+                X_test_new = np.zeros((len(X_test),) + dims)
+                for i, fname in enumerate(X_test):
+                    X_test_new[i] = np.load(fname)
+                X_test = X_test_new
 
         for fold in range(folds):
             data = prepare_data_one_fold(folded_Xs,
@@ -283,8 +284,14 @@ class Predictor(object):
 
             X_train, X_inner_val, X_outer_val, y_train, y_inner_val, y_outer_val = data
 
-            X_train.extend(X_inner_val)
-            y_train.extend(y_inner_val)
+            if isinstance(X_train, np.ndarray):
+                X_train = np.concatenate((X_train, X_inner_val))
+            else:
+                X_train.extend(X_inner_val)
+            if isinstance(y_train, np.ndarray):
+                y_train = np.concatenate((y_train, y_inner_val))
+            else:
+                y_train.extend(y_inner_val)
 
             # Data might be stored as file names
             if isinstance(X_train[0], str):
@@ -305,10 +312,10 @@ class Predictor(object):
                                               callbacks=[earlyStopping],
                                               nb_epoch=nb_epoch,
                                               batch_size=batch_size,
-                                              validation_split=0.1)
+                                              validation_split=1.0-training_ratio)
 
             loss_history = history_callback.history
-            with open('history.json_fold_{0}'.format(fold), 'w') as f_in:
+            with open(os.path.join(self.out_dir, 'history.json_fold_{0}'.format(fold)), 'w') as f_in:
                 json.dump(loss_history, f_in, indent=2)
 
             # evaluate outer validation loss
@@ -317,8 +324,9 @@ class Predictor(object):
                                                  batch_size=50)
             logging.info("\nOuter val loss: {0}".format(outer_val_loss))
 
-            test_loss = self.model.evaluate(np.asarray(X_test), np.asarray(y_test), batch_size=50)
-            logging.info("\nTest loss: {0}".format(test_loss))
+            if len(X_test) > 0:
+                test_loss = self.model.evaluate(np.asarray(X_test), np.asarray(y_test), batch_size=50)
+                logging.info("\nTest loss: {0}".format(test_loss))
 
             # once finish training one fold, reset the model
             self.reset_model()
