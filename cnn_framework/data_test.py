@@ -1,10 +1,15 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
+import os
+import shutil
 import unittest
+
+import cnn_framework
 from cnn_framework.data import (get_data_from_db, prepare_folded_data, split_inner_val_from_train_data,
                                 prepare_data_one_fold, prepare_folded_data_from_multiple_datasets,
-                                prepare_full_train_data_from_multiple_datasets, split_test_from_train_and_val)
+                                prepare_full_train_data_from_multiple_datasets, split_test_from_train_and_val,
+                                prepare_full_train_data_from_file, prepare_folded_data_from_file)
 
 
 class TestData(unittest.TestCase):
@@ -173,3 +178,54 @@ class TestData(unittest.TestCase):
         self.assertEqual(len(y_test), 18)
         self.assertEqual(len(X_train_and_val), 162)
         self.assertEqual(len(y_train_and_val), 162)
+
+    def test_prepare_full_train_data_from_file(self):
+        datafile = os.path.join(os.path.dirname(cnn_framework.__file__),
+                                'test_data',
+                                'datafile.csv')
+        tensors_dir = os.path.join(os.path.dirname(cnn_framework.__file__),
+                                   'test_data',
+                                   'tensors')
+
+        X_test, y_test, X_train, y_train = prepare_full_train_data_from_file(
+            datafile,
+            add_extra_atom_attribute=True,
+            add_extra_bond_attribute=True,
+            differentiate_atom_type=True,
+            differentiate_bond_type=True,
+            save_meta=False,
+            save_tensors_dir=tensors_dir,
+            testing_ratio=0.0
+        )
+
+        self.assertTrue(os.path.exists(tensors_dir))
+        self.assertTrue(all(os.path.exists(os.path.join(tensors_dir, '{}.npy'.format(i))) for i in range(10)))
+
+        self.assertEqual(len(X_test), 0)
+        self.assertEqual(len(y_test), 0)
+        self.assertEqual(len(X_train), 10)
+        self.assertEqual(len(y_train), 10)
+
+        shutil.rmtree(tensors_dir)
+
+    def test_prepare_folded_data_from_file(self):
+        datafile = os.path.join(os.path.dirname(cnn_framework.__file__),
+                                'test_data',
+                                'datafile.csv')
+
+        X_test, y_test, folded_Xs, folded_ys = prepare_folded_data_from_file(
+            datafile, 5,
+            add_extra_atom_attribute=True,
+            add_extra_bond_attribute=True,
+            differentiate_atom_type=True,
+            differentiate_bond_type=True,
+            testing_ratio=0.0
+        )
+
+        self.assertEqual(len(folded_Xs), 5)
+        self.assertEqual(len(folded_ys), 5)
+
+        self.assertEqual(len(X_test), 0)
+        self.assertEqual(len(y_test), 0)
+        self.assertEqual(len(folded_Xs[0]), 2)
+        self.assertEqual(len(folded_ys[0]), 2)
