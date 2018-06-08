@@ -149,6 +149,8 @@ def validate(data_file, input_file, weights_file):
                 if line_split:
                     smi = line_split[0]
                     y = [float(yi) for yi in line_split[1:]]
+                    if len(y) == 1:
+                        y = y[0]
                     smiles_list.append(smi)
                     ys.append(y)
         ys_pred = make_predictions(predictor, smiles_list)
