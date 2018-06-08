@@ -13,6 +13,7 @@ from keras.utils.visualize_util import plot
 import json
 import datetime
 import logging
+import os
 import time
 
 
@@ -65,7 +66,7 @@ def build_model(embedding_size=512, attribute_vector_size=33, depth=5,
 
 
 def train_model(model, X_train, y_train, X_inner_val, y_inner_val, X_test, y_test, X_outer_val=None, y_outer_val=None,
-                nb_epoch=0, batch_size=50, lr_func='0.01', patience=10, load_from_disk=False):
+                nb_epoch=0, batch_size=50, lr_func='0.01', patience=10, load_from_disk=False, save_model_path=None):
     """
     Inputs:
         model - A Keras model
@@ -86,6 +87,11 @@ def train_model(model, X_train, y_train, X_inner_val, y_inner_val, X_test, y_tes
     # Create learning rate function
     lr_func_string = 'def lr(epoch):\n    return {}\n'.format(lr_func)
     exec lr_func_string
+
+    if save_model_path is None:
+        save_model_path = os.getcwd()
+    best_model_fname = os.path.join(save_model_path, 'best_model.h5')  # Only saved if patience==-1
+    current_model_fname = os.path.join(save_model_path, 'current_model.h5')
 
     # Fit (allows keyboard interrupts in the middle)
     try:
@@ -132,6 +138,9 @@ def train_model(model, X_train, y_train, X_inner_val, y_inner_val, X_test, y_tes
 
             epoch_training_end = time.time()
 
+            # Save model after each epoch
+            model.save_weights(current_model_fname, overwrite=True)
+
             logging.info('Training takes {0:0.1f} secs..'.format(epoch_training_end - epoch_training_start))
             # Run through testing set
             logging.info('Inner Validating..')
@@ -166,7 +175,7 @@ def train_model(model, X_train, y_train, X_inner_val, y_inner_val, X_test, y_tes
                 wait = 0
                 prev_best_inner_val_loss = np.mean(this_inner_val_loss)
                 if patience == -1:
-                    model.save_weights('train_cnn_results/best.h5', overwrite=True)
+                    model.save_weights(best_model_fname, overwrite=True)
             else:
                 wait = wait + 1
                 logging.info('{} epochs without inner_val_loss progress'.format(wait))
@@ -174,7 +183,7 @@ def train_model(model, X_train, y_train, X_inner_val, y_inner_val, X_test, y_tes
                     logging.info('stopping early!')
                     break
         if patience == -1:
-            model.load_weights('train_cnn_results/best.h5')
+            model.load_weights(best_model_fname)
 
         # evaluate outer validation loss and test loss upon final model
         if X_outer_val:

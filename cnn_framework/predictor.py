@@ -125,7 +125,8 @@ class Predictor(object):
                                              batch_size=batch_size,
                                              lr_func=lr_func,
                                              patience=patience,
-                                             load_from_disk=True if self.save_tensors_dir is not None else False)
+                                             load_from_disk=True if self.save_tensors_dir is not None else False,
+                                             save_model_path=save_model_path)
 
             model, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss = train_model_output
 
@@ -220,7 +221,8 @@ class Predictor(object):
                                          batch_size=batch_size,
                                          lr_func=lr_func,
                                          patience=patience,
-                                         load_from_disk=True if self.save_tensors_dir is not None else False)
+                                         load_from_disk=True if self.save_tensors_dir is not None else False,
+                                         save_model_path=save_model_path)
 
         model, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss = train_model_output
 
