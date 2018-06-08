@@ -25,6 +25,9 @@ def parse_command_line_arguments():
                         help='A file specifying which datasets to train on. Alternatively, a space-separated .csv file'
                              ' with SMILES and output(s) in the first and subsequent columns, respectively.')
 
+    parser.add_argument('-o', '--out_dir', metavar='DIR', default=os.getcwd(),
+                        help='Output directory')
+
     parser.add_argument('--save_tensors_dir', metavar='DIR',
                         help='Location to save tensors on disk (frees up memory)')
 
@@ -121,6 +124,7 @@ if __name__ == '__main__':
     args = parse_command_line_arguments()
     input_file = args.input[0]
     data_file = args.data
+    out_dir = args.out_dir
     save_tensors_dir = args.save_tensors_dir
     folds = args.folds
     training_ratio = args.train_ratio
@@ -131,10 +135,11 @@ if __name__ == '__main__':
     patience = args.patience
     lr0, lr1 = [float(i) for i in args.learning_rate.split('_')]
 
-    input_directory = os.path.abspath(os.path.dirname(input_file))
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
 
     level = logging.INFO
-    initialize_log(level, os.path.join(input_directory, 'train.log'))
+    initialize_log(level, os.path.join(out_dir, 'train.log'))
 
     # Log start timestamp
     logging.info('CNN training initiated at ' + time.asctime() + '\n')
@@ -143,11 +148,11 @@ if __name__ == '__main__':
     rmg = RMG()
     rmg.logHeader()
 
-    predictor = Predictor(data_file=data_file, save_tensors_dir=save_tensors_dir)
+    predictor = Predictor(data_file=data_file, save_tensors_dir=save_tensors_dir, out_dir=out_dir)
     predictor.load_input(input_file)
 
     lr_func = "float({0} * np.exp(- epoch / {1}))".format(lr0, lr1)
-    save_model_path = os.path.join(input_directory, 'saved_model')
+    save_model_path = os.path.join(out_dir, 'saved_model')
     if not os.path.exists(save_model_path):
         os.mkdir(save_model_path)
 
