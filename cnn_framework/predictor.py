@@ -16,11 +16,12 @@ import json
 
 
 class Predictor(object):
-    def __init__(self, input_file=None, data_file=None, save_tensors_dir=None):
+    def __init__(self, input_file=None, data_file=None, save_tensors_dir=None, out_dir=None):
         self.model = None
         self.input_file = input_file
         self.data_file = data_file
         self.save_tensors_dir = save_tensors_dir
+        self.out_dir = out_dir
         self.datasets = None
         self.add_extra_atom_attribute = None
         self.add_extra_bond_attribute = None
@@ -167,7 +168,9 @@ class Predictor(object):
                 padding=self.padding,
                 padding_final_size=self.padding_final_size,
                 save_tensors_dir=self.save_tensors_dir,
-                testing_ratio=testing_ratio)
+                testing_ratio=testing_ratio,
+                meta_dir=self.out_dir
+            )
         else:
             split_data = prepare_full_train_data_from_multiple_datasets(
                 self.datasets,
@@ -178,7 +181,9 @@ class Predictor(object):
                 padding=self.padding,
                 padding_final_size=self.padding_final_size,
                 prediction_task=self.prediction_task,
-                save_tensors_dir=self.save_tensors_dir)
+                save_tensors_dir=self.save_tensors_dir,
+                meta_dir=self.out_dir
+            )
 
         X_test, y_test, X_train, y_train = split_data
 

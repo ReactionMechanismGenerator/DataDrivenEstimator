@@ -191,7 +191,8 @@ def prepare_full_train_data_from_multiple_datasets(datasets,
                                                    padding_final_size=20,
                                                    prediction_task="Hf298(kcal/mol)",
                                                    save_meta=True,
-                                                   save_tensors_dir=None):
+                                                   save_tensors_dir=None,
+                                                   meta_dir=None):
     if save_tensors_dir is not None:
         if not os.path.exists(save_tensors_dir):
             os.makedirs(save_tensors_dir)
@@ -245,9 +246,13 @@ def prepare_full_train_data_from_multiple_datasets(datasets,
         if save_meta:
             smis_test_string = '\n'.join(smis_test)
             smis_train_string = '\n'.join(smis_train)
-            with open('{0}.{1}_smis_test.txt'.format(db, table), 'w') as f_in:
+            if meta_dir is None:
+                meta_dir = os.getcwd()
+            smis_test_path = os.path.join(meta_dir, '{0}.{1}_smis_test.txt'.format(db, table))
+            smis_train_path = os.path.join(meta_dir, '{0}.{1}_smis_train.txt'.format(db, table))
+            with open(smis_test_path, 'w') as f_in:
                 f_in.write(smis_test_string)
-            with open('{0}.{1}_smis_train.txt'.format(db, table), 'w') as f_in:
+            with open(smis_train_path, 'w') as f_in:
                 f_in.write(smis_train_string)
 
     # merge into one folded_Xs and folded_ys
@@ -302,7 +307,8 @@ def prepare_full_train_data_from_file(datafile,
                                       padding_final_size=20,
                                       save_meta=True,
                                       save_tensors_dir=None,
-                                      testing_ratio=0.0):
+                                      testing_ratio=0.0,
+                                      meta_dir=None):
     smiles, y = [], []
     with open(datafile) as df:
         for line in df:
@@ -357,9 +363,13 @@ def prepare_full_train_data_from_file(datafile,
     if save_meta:
         smis_test_string = '\n'.join(smis_test)
         smis_train_string = '\n'.join(smis_train)
-        with open('{}_smis_test.txt'.format(datafile), 'w') as f_in:
+        if meta_dir is None:
+            meta_dir = os.getcwd()
+        smis_test_path = os.path.join(meta_dir, 'smis_test.txt')
+        smis_train_path = os.path.join(meta_dir, 'smis_train.txt')
+        with open(smis_test_path, 'w') as f_in:
             f_in.write(smis_test_string)
-        with open('{}_smis_train.txt'.format(datafile), 'w') as f_in:
+        with open(smis_train_path, 'w') as f_in:
             f_in.write(smis_train_string)
     
     return X_test, y_test, X_train, y_train
