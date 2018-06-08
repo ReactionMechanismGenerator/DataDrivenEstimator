@@ -69,7 +69,7 @@ class Predictor(object):
                     self.datasets.append((host, db, table, float(testing_ratio)))
 
     def kfcv_train(self, folds, lr_func, save_model_path,
-                   batch_size=1, nb_epoch=150, patience=10):
+                   batch_size=1, nb_epoch=150, patience=10, training_ratio=0.9, testing_ratio=0.0):
         # prepare data for training
         if self.get_data_from_file:
             folded_data = prepare_folded_data_from_file(self.data_file, folds,
@@ -79,7 +79,8 @@ class Predictor(object):
                                                         self.differentiate_bond_type,
                                                         self.padding,
                                                         self.padding_final_size,
-                                                        self.save_tensors_dir)
+                                                        self.save_tensors_dir,
+                                                        testing_ratio)
         else:
             folded_data = prepare_folded_data_from_multiple_datasets(self.datasets, folds,
                                                                      self.add_extra_atom_attribute,
@@ -101,7 +102,8 @@ class Predictor(object):
             data = prepare_data_one_fold(folded_Xs,
                                          folded_ys,
                                          current_fold=fold,
-                                         shuffle_seed=4)
+                                         shuffle_seed=4,
+                                         training_ratio=training_ratio)
 
             # execute train_model
             X_train, X_inner_val, X_outer_val, y_train, y_inner_val, y_outer_val = data
@@ -151,7 +153,7 @@ class Predictor(object):
                           full_folds_loss_report_path)
 
     def full_train(self, lr_func, save_model_path,
-                   batch_size=1, nb_epoch=150, patience=10):
+                   batch_size=1, nb_epoch=150, patience=10, training_ratio=0.9, testing_ratio=0.0):
         # prepare data for training
         if self.get_data_from_file:
             split_data = prepare_full_train_data_from_file(self.data_file,
@@ -161,7 +163,8 @@ class Predictor(object):
                                                            self.differentiate_bond_type,
                                                            self.padding,
                                                            self.padding_final_size,
-                                                           self.save_tensors_dir)
+                                                           self.save_tensors_dir,
+                                                           testing_ratio)
         else:
             split_data = prepare_full_train_data_from_multiple_datasets(self.datasets,
                                                                         self.add_extra_atom_attribute,
@@ -178,7 +181,7 @@ class Predictor(object):
         losses = []
         inner_val_losses = []
         test_losses = []
-        data = split_inner_val_from_train_data(X_train, y_train)
+        data = split_inner_val_from_train_data(X_train, y_train, training_ratio=training_ratio)
 
         X_train, X_inner_val, y_train, y_inner_val = data
 
@@ -213,7 +216,7 @@ class Predictor(object):
         fpath = os.path.join(save_model_path, 'full_train')
         self.save_model(loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath)
 
-    def kfcv_batch_train(self, folds, batch_size=50, nb_epoch=150, patience=10):
+    def kfcv_batch_train(self, folds, batch_size=50, nb_epoch=150, patience=10, training_ratio=0.9, testing_ratio=0.0):
         # prepare data for training
         if self.get_data_from_file:
             folded_data = prepare_folded_data_from_file(self.data_file, folds,
@@ -223,7 +226,8 @@ class Predictor(object):
                                                         self.differentiate_bond_type,
                                                         self.padding,
                                                         self.padding_final_size,
-                                                        self.save_tensors_dir)
+                                                        self.save_tensors_dir,
+                                                        testing_ratio)
         else:
             folded_data = prepare_folded_data_from_multiple_datasets(self.datasets, folds,
                                                                      self.add_extra_atom_attribute,
@@ -249,7 +253,8 @@ class Predictor(object):
             data = prepare_data_one_fold(folded_Xs,
                                          folded_ys,
                                          current_fold=fold,
-                                         shuffle_seed=4)
+                                         shuffle_seed=4,
+                                         training_ratio=training_ratio)
 
             X_train, X_inner_val, X_outer_val, y_train, y_inner_val, y_outer_val = data
 
