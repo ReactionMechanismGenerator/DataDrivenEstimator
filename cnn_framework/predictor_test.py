@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-from cnn_framework.predictor import *
+from cnn_framework.predictor import Predictor
 from cnn_framework.layers import MoleculeConv
 from keras.layers.core import Dense
 import unittest
 import os
+import shutil
 import cnn_framework
 from rmgpy.molecule import Molecule
 
@@ -148,3 +149,118 @@ class TestPredictor(unittest.TestCase):
         h298_predicted = self.predictor.predict(mol_test)
 
         self.assertAlmostEqual(h298_predicted, 19.5, 0)
+
+    def test_kfcv_train(self):
+        test_predictor_input = os.path.join(os.path.dirname(cnn_framework.__file__),
+                                            'test_data',
+                                            'minimal_predictor',
+                                            'predictor_input.py')
+        self.predictor.load_input(test_predictor_input)
+        param_path = os.path.join(os.path.dirname(cnn_framework.__file__),
+                                  'test_data',
+                                  'minimal_predictor',
+                                  'weights.h5')
+        self.predictor.load_parameters(param_path)
+
+        datafile = os.path.join(os.path.dirname(cnn_framework.__file__),
+                                'test_data',
+                                'datafile.csv')
+        self.predictor.data_file = datafile
+        self.predictor.get_data_from_file = True
+
+        out_dir = os.path.join(os.path.dirname(cnn_framework.__file__),
+                               'test_data',
+                               'test_out')
+        self.predictor.out_dir = out_dir
+        save_model_path = os.path.join(out_dir, 'saved_model')
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        if not os.path.exists(save_model_path):
+            os.mkdir(save_model_path)
+
+        lr_func = "float({0} * np.exp(- epoch / {1}))".format(0.0007, 30.0)
+        self.predictor.kfcv_train(2, lr_func, save_model_path, nb_epoch=2, patience=-1, testing_ratio=0.1)
+
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'best_model.h5')))  # Kind of lucky this exists
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'current_model.h5')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'fold_0.h5')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'fold_0.hist')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'fold_0.json')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'fold_0.png')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'fold_0_loss_report.txt')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'fold_1.h5')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'fold_1.hist')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'fold_1.json')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'fold_1.png')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'fold_1_loss_report.txt')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'full_folds_loss_report.txt')))
+
+        shutil.rmtree(out_dir)
+
+    def test_full_train(self):
+        test_predictor_input = os.path.join(os.path.dirname(cnn_framework.__file__),
+                                            'test_data',
+                                            'minimal_predictor',
+                                            'predictor_input.py')
+        self.predictor.load_input(test_predictor_input)
+
+        datafile = os.path.join(os.path.dirname(cnn_framework.__file__),
+                                'test_data',
+                                'datafile.csv')
+        self.predictor.data_file = datafile
+        self.predictor.get_data_from_file = True
+
+        out_dir = os.path.join(os.path.dirname(cnn_framework.__file__),
+                               'test_data',
+                               'test_out')
+        self.predictor.out_dir = out_dir
+        save_model_path = os.path.join(out_dir, 'saved_model')
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        if not os.path.exists(save_model_path):
+            os.mkdir(save_model_path)
+
+        lr_func = "float({0} * np.exp(- epoch / {1}))".format(0.0007, 30.0)
+        self.predictor.full_train(lr_func, save_model_path, nb_epoch=2, training_ratio=1.0, testing_ratio=0.0)
+
+        self.assertTrue(os.path.exists(os.path.join(out_dir, 'smis_test.txt')))
+        self.assertTrue(os.path.exists(os.path.join(out_dir, 'smis_train.txt')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'current_model.h5')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'full_train.h5')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'full_train.hist')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'full_train.json')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'full_train.png')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'full_train_loss_report.txt')))
+
+        shutil.rmtree(out_dir)
+
+    def test_kfcv_batch_train(self):
+        test_predictor_input = os.path.join(os.path.dirname(cnn_framework.__file__),
+                                            'test_data',
+                                            'minimal_predictor',
+                                            'predictor_input.py')
+        self.predictor.load_input(test_predictor_input)
+
+        datafile = os.path.join(os.path.dirname(cnn_framework.__file__),
+                                'test_data',
+                                'datafile.csv')
+        self.predictor.data_file = datafile
+        self.predictor.get_data_from_file = True
+
+        out_dir = os.path.join(os.path.dirname(cnn_framework.__file__),
+                               'test_data',
+                               'test_out')
+        self.predictor.out_dir = out_dir
+        save_model_path = os.path.join(out_dir, 'saved_model')
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        if not os.path.exists(save_model_path):
+            os.mkdir(save_model_path)
+
+        self.predictor.kfcv_batch_train(3, batch_size=2, nb_epoch=2, training_ratio=0.8, testing_ratio=0.1)
+
+        self.assertTrue(os.path.exists(os.path.join(out_dir, 'history.json_fold_0')))
+        self.assertTrue(os.path.exists(os.path.join(out_dir, 'history.json_fold_1')))
+        self.assertTrue(os.path.exists(os.path.join(out_dir, 'history.json_fold_2')))
+
+        shutil.rmtree(out_dir)
