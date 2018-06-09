@@ -71,7 +71,7 @@ class Predictor(object):
                     host, db, table = [token.strip() for token in dataset.split('.')]
                     self.datasets.append((host, db, table, float(testing_ratio)))
 
-    def kfcv_train(self, folds, lr_func, save_model_path,
+    def kfcv_train(self, folds, lr_func, save_model_path, pretrained_weights=None,
                    batch_size=1, nb_epoch=150, patience=10, training_ratio=0.9, testing_ratio=0.0):
         # prepare data for training
         if self.get_data_from_file:
@@ -142,7 +142,10 @@ class Predictor(object):
             self.save_model(loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath)
 
             # once finish training one fold, reset the model
-            self.reset_model()
+            if pretrained_weights is not None:
+                self.load_parameters(pretrained_weights)
+            else:
+                self.reset_model()
 
         # mean inner_val_loss and outer_val_loss used for selecting parameters,
         # e.g., lr, epoch, attributes, etc
@@ -241,7 +244,8 @@ class Predictor(object):
             if not self.keep_tensors:
                 shutil.rmtree(self.save_tensors_dir)
 
-    def kfcv_batch_train(self, folds, batch_size=50, nb_epoch=150, patience=10, training_ratio=0.9, testing_ratio=0.0):
+    def kfcv_batch_train(self, folds, pretrained_weights=None,
+                         batch_size=50, nb_epoch=150, patience=10, training_ratio=0.9, testing_ratio=0.0):
         # prepare data for training
         if self.get_data_from_file:
             folded_data = prepare_folded_data_from_file(
@@ -331,7 +335,10 @@ class Predictor(object):
                 logging.info("\nTest loss: {0}".format(test_loss))
 
             # once finish training one fold, reset the model
-            self.reset_model()
+            if pretrained_weights is not None:
+                self.load_parameters(pretrained_weights)
+            else:
+                self.reset_model()
 
         # Delete tensor directory
         if self.save_tensors_dir is not None:

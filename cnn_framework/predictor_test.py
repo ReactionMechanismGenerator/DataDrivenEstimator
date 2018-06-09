@@ -257,7 +257,13 @@ class TestPredictor(unittest.TestCase):
         if not os.path.exists(save_model_path):
             os.mkdir(save_model_path)
 
-        self.predictor.kfcv_batch_train(3, batch_size=2, nb_epoch=2, training_ratio=0.8, testing_ratio=0.1)
+        weights_file = os.path.join(os.path.dirname(cnn_framework.__file__),
+                                    'test_data',
+                                    'minimal_predictor',
+                                    'weights.h5')
+
+        self.predictor.kfcv_batch_train(3, pretrained_weights=weights_file,
+                                        batch_size=2, nb_epoch=2, training_ratio=0.8, testing_ratio=0.1)
 
         self.assertTrue(os.path.exists(os.path.join(out_dir, 'history.json_fold_0')))
         self.assertTrue(os.path.exists(os.path.join(out_dir, 'history.json_fold_1')))

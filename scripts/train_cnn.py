@@ -18,10 +18,13 @@ def parse_command_line_arguments():
     """
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-i', '--input', metavar='FILE', type=str,
-                        nargs=1, help='a predictor training input file')
+    parser.add_argument('-i', '--input', metavar='FILE',
+                        help='a predictor training input file')
 
-    parser.add_argument('-d', '--data', metavar='FILE', type=str,
+    parser.add_argument('-w', '--weights', metavar='H5',
+                        help='Saved model weights to continue training on (typically for transfer learning)')
+
+    parser.add_argument('-d', '--data', metavar='FILE',
                         help='A file specifying which datasets to train on. Alternatively, a space-separated .csv file'
                              ' with SMILES and output(s) in the first and subsequent columns, respectively.')
 
@@ -44,14 +47,14 @@ def parse_command_line_arguments():
                         help='Fraction of data to use for testing. If loading data from database,'
                              ' test ratios are specified in datasets file')
 
-    parser.add_argument('-t', '--train_mode', type=str, default='full_train',
+    parser.add_argument('-t', '--train_mode', default='full_train',
                         help='train mode: currently support in_house and keras for k-fold cross-validation,'
                              ' and full_train for full training')
 
     parser.add_argument('-bs', '--batch_size', type=int, default=1,
                         help='batch training size')
 
-    parser.add_argument('-lr', '--learning_rate', type=str, default='0.0007_30.0',
+    parser.add_argument('-lr', '--learning_rate', default='0.0007_30.0',
                         help='two parameters for learning rate')
 
     parser.add_argument('-ep', '--nb_epoch', type=int, default=150,
@@ -125,7 +128,8 @@ if __name__ == '__main__':
     # python train_cnn.py -i input.py -d datasets.txt -f 5 -t in_house -bs 1 -lr 0.0007_30.0
 
     args = parse_command_line_arguments()
-    input_file = args.input[0]
+    input_file = args.input
+    weights_file = args.weights
     data_file = args.data
     out_dir = args.out_dir
     save_tensors_dir = args.save_tensors_dir
@@ -157,6 +161,8 @@ if __name__ == '__main__':
                           keep_tensors=keep_tensors,
                           out_dir=out_dir)
     predictor.load_input(input_file)
+    if weights_file is not None:
+        predictor.load_parameters(weights_file)
 
     lr_func = "float({0} * np.exp(- epoch / {1}))".format(lr0, lr1)
     save_model_path = os.path.join(out_dir, 'saved_model')
@@ -171,13 +177,15 @@ if __name__ == '__main__':
                              nb_epoch=nb_epoch,
                              patience=patience,
                              training_ratio=training_ratio,
-                             testing_ratio=testing_ratio)
+                             testing_ratio=testing_ratio,
+                             pretrained_weights=weights_file)
     elif train_mode == 'keras':
         predictor.kfcv_batch_train(folds=folds, batch_size=batch_size,
                                    nb_epoch=nb_epoch,
                                    patience=patience,
                                    training_ratio=training_ratio,
-                                   testing_ratio=testing_ratio)
+                                   testing_ratio=testing_ratio,
+                                   pretrained_weights=weights_file)
     elif train_mode == 'full_train':
         predictor.full_train(batch_size=batch_size,
                              lr_func=lr_func,
