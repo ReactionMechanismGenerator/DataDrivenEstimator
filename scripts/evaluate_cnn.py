@@ -24,11 +24,15 @@ def parse_command_line_arguments():
                         help='A file specifying which datasets to test on. Alternatively, a space-separated .csv file'
                              ' with SMILES and output(s) in the first and subsequent columns, respectively.')
 
-    parser.add_argument('-i', '--input',
+    parser.add_argument('-i', '--input', metavar='FILE',
                         help='Path to predictor input file')
 
-    parser.add_argument('-w', '--weights',
+    parser.add_argument('-w', '--weights', metavar='H5',
                         help='Path to model weights')
+
+    parser.add_argument('-ms', '--mean_and_std', metavar='NPZ',
+                        help='Saved mean and standard deviation. '
+                             'Should be loaded alongside weights if output was normalized during training')
 
     return parser.parse_args()
 ################################################################################
@@ -81,11 +85,11 @@ def prepare_data(host, db_name, collection_name, prediction_task="Hf298(kcal/mol
     return smiles_list, ys
 
 
-def prepare_predictor(input_file, weights_file):
+def prepare_predictor(input_file, weights_file=None, mean_and_std_file=None):
 
     predictor = Predictor()
     predictor.load_input(input_file)
-    predictor.load_parameters(weights_file)
+    predictor.load_parameters(param_path=weights_file, mean_and_std_path=mean_and_std_file)
     return predictor
 
 
@@ -136,10 +140,10 @@ def display_result(result_df, prediction_task="Hf298(kcal/mol)"):
     return count, mean, std
 
 
-def validate(data_file, input_file, weights_file):
+def validate(data_file, input_file, weights_file=None, mean_and_std_file=None):
 
     # load cnn predictor
-    predictor = prepare_predictor(input_file, weights_file)
+    predictor = prepare_predictor(input_file, weights_file=weights_file, mean_and_std_file=mean_and_std_file)
 
     if data_file.endswith('.csv'):
         smiles_list, ys = [], []
@@ -195,7 +199,8 @@ def main():
     data_file = args.data
     input_file = args.input
     weights_file = args.weights
-    evaluation_results = validate(data_file, input_file, weights_file)
+    mean_and_std_file = args.mean_and_std
+    evaluation_results = validate(data_file, input_file, weights_file=weights_file, mean_and_std_file=mean_and_std_file)
 
     with open('evaluation_results.json', 'w') as f_out:
         json.dump(evaluation_results, f_out, indent=4, sort_keys=True)

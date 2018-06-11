@@ -7,6 +7,7 @@ from keras.layers.core import Dense
 import unittest
 import os
 import shutil
+import numpy as np
 import cnn_framework
 from rmgpy.molecule import Molecule
 
@@ -150,6 +151,36 @@ class TestPredictor(unittest.TestCase):
 
         self.assertAlmostEqual(h298_predicted, 19.5, 0)
 
+    def test_normalize(self):
+        y1 = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
+        y2 = [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+        y1_norm_expected = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
+        y2_norm_expected = [-1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0]
+
+        y1_norm, y2_norm = self.predictor.normalize_output(y1, y2)
+
+        self.assertAlmostEqual(self.predictor.y_mean, 4.0)
+        self.assertAlmostEqual(self.predictor.y_std, 2.0)
+        self.assertTrue(np.allclose(y1_norm, y1_norm_expected))
+        self.assertTrue(np.allclose(y2_norm, y2_norm_expected))
+
+        y1 = [[1.0, 2.0], [3.0, 4.0]]
+        y2 = [[2.0, 3.0], [4.0, 5.0]]
+        mean_expected = [2.0, 3.0]
+        std_expected = [1.0, 1.0]
+        y1_norm_expected = [[-1.0, -1.0], [1.0, 1.0]]
+        y2_norm_expected = [[0.0, 0.0], [2.0, 2.0]]
+
+        y1_norm, y2_norm = self.predictor.normalize_output(y1, y2)
+
+        self.assertTrue(np.allclose(self.predictor.y_mean, mean_expected))
+        self.assertTrue(np.allclose(self.predictor.y_std, std_expected))
+        self.assertTrue(np.allclose(y1_norm, y1_norm_expected))
+        self.assertTrue(np.allclose(y2_norm, y2_norm_expected))
+
+        self.predictor.y_mean = None
+        self.predictor.y_std = None
+
     def test_kfcv_train(self):
         test_predictor_input = os.path.join(os.path.dirname(cnn_framework.__file__),
                                             'test_data',
@@ -198,6 +229,8 @@ class TestPredictor(unittest.TestCase):
         shutil.rmtree(out_dir)
 
     def test_full_train(self):
+        self.predictor.normalize = True
+
         test_predictor_input = os.path.join(os.path.dirname(cnn_framework.__file__),
                                             'test_data',
                                             'minimal_predictor',
@@ -231,7 +264,9 @@ class TestPredictor(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(save_model_path, 'full_train.json')))
         self.assertTrue(os.path.exists(os.path.join(save_model_path, 'full_train.png')))
         self.assertTrue(os.path.exists(os.path.join(save_model_path, 'full_train_loss_report.txt')))
+        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'full_train_mean_std.npz')))
 
+        self.predictor.normalize = False
         shutil.rmtree(out_dir)
 
     def test_kfcv_batch_train(self):

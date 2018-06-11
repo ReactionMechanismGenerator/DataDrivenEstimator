@@ -17,13 +17,15 @@ import json
 
 
 class Predictor(object):
-    def __init__(self, input_file=None, data_file=None, save_tensors_dir=None, keep_tensors=False, out_dir=None):
+    def __init__(self, input_file=None, data_file=None, save_tensors_dir=None, keep_tensors=False, out_dir=None,
+                 normalize=False):
         self.model = None
         self.input_file = input_file
         self.data_file = data_file
         self.save_tensors_dir = save_tensors_dir
         self.keep_tensors = keep_tensors
         self.out_dir = out_dir
+        self.normalize = normalize
         self.datasets = None
         self.add_extra_atom_attribute = None
         self.add_extra_bond_attribute = None
@@ -32,6 +34,8 @@ class Predictor(object):
         self.padding = None
         self.padding_final_size = None
         self.prediction_task = None
+        self.y_mean = None
+        self.y_std = None
 
         if self.input_file is not None:
             read_input_file(self.input_file, self)
@@ -112,6 +116,11 @@ class Predictor(object):
 
             # execute train_model
             X_train, X_inner_val, X_outer_val, y_train, y_inner_val, y_outer_val = data
+            if self.normalize:
+                y_train, y_inner_val, y_outer_val, y_test = self.normalize_output(y_train,
+                                                                                  y_inner_val,
+                                                                                  y_outer_val,
+                                                                                  y_test)
             train_model_output = train_model(self.model,
                                              X_train,
                                              y_train,
@@ -205,6 +214,9 @@ class Predictor(object):
         data = split_inner_val_from_train_data(X_train, y_train, training_ratio=training_ratio)
 
         X_train, X_inner_val, y_train, y_inner_val = data
+
+        if self.normalize:
+            y_train, y_inner_val, y_test = self.normalize_output(y_train, y_inner_val, y_test)
 
         # execute train_model
         logging.info('\nStart full training...')
@@ -311,6 +323,9 @@ class Predictor(object):
                 X_train = X_train_new
                 X_outer_val = X_outer_val_new
 
+            if self.normalize:
+                y_train, y_outer_val, y_test = self.normalize_output(y_train, y_outer_val, y_test)
+
             earlyStopping = EarlyStopping(monitor='val_loss', patience=patience, verbose=1, mode='auto')
 
             history_callback = self.model.fit(np.asarray(X_train),
@@ -345,14 +360,32 @@ class Predictor(object):
             if not self.keep_tensors:
                 shutil.rmtree(self.save_tensors_dir)
 
-    def load_parameters(self, param_path=None):
-        self.model.load_weights(param_path)
+    def normalize_output(self, y_train, *other_ys):
+        y_train = np.asarray(y_train)
+        self.y_mean = np.mean(y_train, axis=0)
+        self.y_std = np.std(y_train, axis=0)
+        logging.info('Mean: {}, std: {}'.format(self.y_mean, self.y_std))
+
+        y_train = (y_train - self.y_mean) / self.y_std
+        other_ys = tuple((np.asarray(y) - self.y_mean) / self.y_std for y in other_ys)
+        return (y_train,) + other_ys
+
+    def load_parameters(self, param_path=None, mean_and_std_path=None):
+        if param_path is not None:
+            self.model.load_weights(param_path)
+        if mean_and_std_path is not None:
+            npzfile = np.load(mean_and_std_path)
+            self.y_mean = npzfile['mean']
+            self.y_std = npzfile['std']
 
     def reset_model(self):
         self.model = reset_model(self.model)
 
     def save_model(self, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath):
         save_model(self.model, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath)
+        if self.y_mean is not None and self.y_std is not None:
+            np.savez(fpath + '_mean_std.npz', mean=self.y_mean, std=self.y_std)
+            logging.info('...saved y mean and standard deviation to {}_mean_std.npz'.format(fpath))
 
     def predict(self, molecule):
         molecule_tensor = get_molecule_tensor(molecule,
@@ -363,7 +396,12 @@ class Predictor(object):
         if self.padding:
             molecule_tensor = pad_molecule_tensor(molecule_tensor, self.padding_final_size)
         molecule_tensor_array = np.array([molecule_tensor])
+        y_pred = self.model.predict(molecule_tensor_array)
+
+        if self.y_mean is not None and self.y_std is not None:
+            y_pred = y_pred * self.y_std + self.y_mean
+
         if self.prediction_task == "Cp(cal/mol/K)":
-            return self.model.predict(molecule_tensor_array)[0]
+            return y_pred[0]
         else:
-            return self.model.predict(molecule_tensor_array)[0][0]
+            return y_pred[0][0]

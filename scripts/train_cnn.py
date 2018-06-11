@@ -31,6 +31,9 @@ def parse_command_line_arguments():
     parser.add_argument('-o', '--out_dir', metavar='DIR', default=os.getcwd(),
                         help='Output directory')
 
+    parser.add_argument('-n', '--normalize', action='store_true',
+                        help='Normalize output based on training set mean and standard deviation')
+
     parser.add_argument('--save_tensors_dir', metavar='DIR',
                         help='Location to save tensors on disk (frees up memory)')
 
@@ -132,6 +135,7 @@ if __name__ == '__main__':
     weights_file = args.weights
     data_file = args.data
     out_dir = args.out_dir
+    normalize = args.normalize
     save_tensors_dir = args.save_tensors_dir
     keep_tensors = args.keep_tensors
     folds = args.folds
@@ -161,8 +165,7 @@ if __name__ == '__main__':
                           keep_tensors=keep_tensors,
                           out_dir=out_dir)
     predictor.load_input(input_file)
-    if weights_file is not None:
-        predictor.load_parameters(weights_file)
+    predictor.load_parameters(param_path=weights_file)
 
     lr_func = "float({0} * np.exp(- epoch / {1}))".format(lr0, lr1)
     save_model_path = os.path.join(out_dir, 'saved_model')
