@@ -226,6 +226,11 @@ class TestPredictor(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(save_model_path, 'fold_1_loss_report.txt')))
         self.assertTrue(os.path.exists(os.path.join(save_model_path, 'full_folds_loss_report.txt')))
 
+        self.predictor.input_file = None
+        self.predictor.data_file = None
+        self.predictor.save_tensors_dir = None
+        self.predictor.keep_tensors = False
+        self.predictor.out_dir = None
         shutil.rmtree(out_dir)
 
     def test_full_train(self):
@@ -266,6 +271,11 @@ class TestPredictor(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(save_model_path, 'full_train_loss_report.txt')))
         self.assertTrue(os.path.exists(os.path.join(save_model_path, 'full_train_mean_std.npz')))
 
+        self.predictor.input_file = None
+        self.predictor.data_file = None
+        self.predictor.save_tensors_dir = None
+        self.predictor.keep_tensors = False
+        self.predictor.out_dir = None
         self.predictor.normalize = False
         shutil.rmtree(out_dir)
 
@@ -304,4 +314,9 @@ class TestPredictor(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(out_dir, 'history.json_fold_1')))
         self.assertTrue(os.path.exists(os.path.join(out_dir, 'history.json_fold_2')))
 
+        self.predictor.input_file = None
+        self.predictor.data_file = None
+        self.predictor.save_tensors_dir = None
+        self.predictor.keep_tensors = False
+        self.predictor.out_dir = None
         shutil.rmtree(out_dir)
