@@ -22,12 +22,12 @@ class TestPredictor(unittest.TestCase):
 
         self.predictor.build_model()
         predictor_model = self.predictor.model
-        self.assertEqual(len(predictor_model.layers), 3)
-        self.assertTrue(isinstance(predictor_model.layers[0], MoleculeConv))
-        self.assertTrue(isinstance(predictor_model.layers[1], Dense))
+        self.assertEqual(len(predictor_model.layers), 4)
+        self.assertTrue(isinstance(predictor_model.layers[1], MoleculeConv))
+        self.assertTrue(isinstance(predictor_model.layers[2], Dense))
 
-        self.assertEqual(predictor_model.layers[0].inner_dim, 32)
-        self.assertEqual(predictor_model.layers[0].units, 512)
+        self.assertEqual(predictor_model.layers[1].inner_dim, 32)
+        self.assertEqual(predictor_model.layers[1].units, 512)
 
     def test_load_input(self):
 
@@ -39,14 +39,14 @@ class TestPredictor(unittest.TestCase):
         self.predictor.load_input(test_predictor_input)
 
         predictor_model = self.predictor.model
-        self.assertEqual(len(predictor_model.layers), 3)
-        self.assertTrue(isinstance(predictor_model.layers[0], MoleculeConv))
-        self.assertTrue(isinstance(predictor_model.layers[1], Dense))
+        self.assertEqual(len(predictor_model.layers), 4)
+        self.assertTrue(isinstance(predictor_model.layers[1], MoleculeConv))
         self.assertTrue(isinstance(predictor_model.layers[2], Dense))
+        self.assertTrue(isinstance(predictor_model.layers[3], Dense))
 
-        gfp = self.predictor.model.layers[0]
-        dense1 = self.predictor.model.layers[1]
-        dense2 = self.predictor.model.layers[2]
+        gfp = self.predictor.model.layers[1]
+        dense1 = self.predictor.model.layers[2]
+        dense2 = self.predictor.model.layers[3]
 
         self.assertEqual(gfp.W_inner.shape.eval()[0], 4)
         self.assertEqual(gfp.W_inner.shape.eval()[1], 38)
@@ -98,9 +98,9 @@ class TestPredictor(unittest.TestCase):
                                   'weights.h5')
         self.predictor.load_parameters(param_path)
 
-        gfp = self.predictor.model.layers[0]
-        dense1 = self.predictor.model.layers[1]
-        dense2 = self.predictor.model.layers[2]
+        gfp = self.predictor.model.layers[1]
+        dense1 = self.predictor.model.layers[2]
+        dense2 = self.predictor.model.layers[3]
 
         self.assertAlmostEqual(gfp.W_inner.eval()[0][0][0], 1.000, 3)
         self.assertAlmostEqual(gfp.b_inner.eval()[0][0][0], 0.000, 3)
