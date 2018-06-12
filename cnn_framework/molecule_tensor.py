@@ -175,15 +175,17 @@ def get_bond_attributes(molecule,
         for bonded_atom, bond in atom.bonds.iteritems():
             if not bonded_atom.isHydrogen() and (bond not in bond_attributes_dict):
 
-                attributes = [1]
                 if differentiate_bond_type:
+                    attributes = []
                     attributes.extend(one_hot_vector(bond.getOrderStr(),
                                                      ['S', 'B', 'D', 'T']))
                     # Add if is aromatic
                     attributes.append(bond.isBenzene())
 
                     attributes.append(is_bond_conjugated(bond))
-
+                else:
+                    attributes = [1]
+                
                 attributes.append(molecule.__isChainInCycle([bond.atom1, bond.atom2]))
 
                 if add_extra_attribute:
@@ -200,7 +202,7 @@ def get_bond_attributes(molecule,
 
     if not bond_attributes_dict:
         if differentiate_bond_type:
-            bond_attributes_dict['no_bond'] = np.array([0]*15, dtype=np.float32)
+            bond_attributes_dict['no_bond'] = np.array([0]*14, dtype=np.float32)
         else:
             bond_attributes_dict['no_bond'] = np.array([0]*9, dtype=np.float32)
 
