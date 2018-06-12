@@ -24,7 +24,10 @@ def predictor_model(prediction_task="Hf298(kcal/mol)",
                     dropout_rate_inner=0.0, dropout_rate_outer=0.0,
                     dropout_rate_hidden=0.0, dropout_rate_output=0.0,
                     n_model=None):
-
+                    
+    if dropout_rate_inner==0.0 and dropout_rate_outer==0.0 \
+        and dropout_rate_hidden==0.0 and dropout_rate_output==0.0:
+        n_model=None
     
     if attribute_vector_size is None:
         attribute_vector_size = get_attribute_vector_size(add_extra_atom_attribute, 
