@@ -269,10 +269,15 @@ def reset_model(model):
             layer.b.set_value(np.zeros(layer.b.shape.eval(), dtype=np.float32))
             logging.info('dense layer reset')
 
-        elif '.Dropout' in str(layer):
-            logging.info('dropout unchanged')
+        elif '.RandomMask' in str(layer):
+            logging.info('RandomMask unchanged')
+        
+        elif '.InputLayer' in str(layer):
+            logging.info('InputLayer unchanged')
+        
         else:
             raise ValueError('Unknown layer {}, cannot reset weights'.format(str(layer)))
+    
     logging.info('Reset model weights')
     return model
 
