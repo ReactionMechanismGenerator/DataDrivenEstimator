@@ -212,7 +212,7 @@ class TestPredictor(unittest.TestCase):
         lr_func = "float({0} * np.exp(- epoch / {1}))".format(0.0007, 30.0)
         self.predictor.kfcv_train(2, lr_func, save_model_path, nb_epoch=2, patience=-1, testing_ratio=0.1)
 
-        self.assertTrue(os.path.exists(os.path.join(save_model_path, 'best_model.h5')))  # Kind of lucky this exists
+        self.assertTrue(not os.path.exists(os.path.join(save_model_path, 'best_model.h5')))
         self.assertTrue(os.path.exists(os.path.join(save_model_path, 'current_model.h5')))
         self.assertTrue(os.path.exists(os.path.join(save_model_path, 'fold_0.h5')))
         self.assertTrue(os.path.exists(os.path.join(save_model_path, 'fold_0.hist')))

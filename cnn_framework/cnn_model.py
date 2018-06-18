@@ -174,7 +174,7 @@ def train_model(model, X_train, y_train, X_inner_val, y_inner_val, X_test, y_tes
             if np.mean(this_inner_val_loss) < prev_best_inner_val_loss:
                 wait = 0
                 prev_best_inner_val_loss = np.mean(this_inner_val_loss)
-                if patience == -1:
+                if patience != -1:
                     model.save_weights(best_model_fname, overwrite=True)
             else:
                 wait = wait + 1
@@ -182,7 +182,7 @@ def train_model(model, X_train, y_train, X_inner_val, y_inner_val, X_test, y_tes
                 if wait == patience:
                     logging.info('stopping early!')
                     break
-        if patience == -1:
+        if patience != -1 and os.path.exists(best_model_fname):
             model.load_weights(best_model_fname)
 
         # evaluate outer validation loss and test loss upon final model

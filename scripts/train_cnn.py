@@ -64,7 +64,8 @@ def parse_command_line_arguments():
                         help='number of epochs for training')
 
     parser.add_argument('-pc', '--patience', type=int, default=10,
-                        help='number of consecutive epochs allowed for loss increase')
+                        help='Number of consecutive epochs allowed for loss increase before stopping early.'
+                             ' Note: A value of -1 indicates that the best model will NOT be saved!')
 
     return parser.parse_args()
 ################################################################################
