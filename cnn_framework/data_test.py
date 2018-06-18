@@ -39,7 +39,8 @@ class TestData(unittest.TestCase):
 
         folds = 5
         shuffle_seed = 4
-        (folded_Xs, folded_ys) = prepare_folded_data(self.X, self.y, folds, shuffle_seed)
+        X, y = self.X[:], self.y[:]  # Make copies because they get shuffled in place
+        (folded_Xs, folded_ys) = prepare_folded_data(X, y, folds, shuffle_seed)
         self.assertEqual(len(folded_Xs), folds)
         self.assertEqual(len(folded_ys), folds)
 
@@ -60,10 +61,8 @@ class TestData(unittest.TestCase):
 
         shuffle_seed = 4
         training_ratio = 0.9
-        data = split_inner_val_from_train_data(self.X,
-                                               self.y,
-                                               shuffle_seed,
-                                               training_ratio)
+        X, y = self.X[:], self.y[:]  # Make copies because they get shuffled in place
+        data = split_inner_val_from_train_data(X, y, shuffle_seed, training_ratio)
 
         X_train = data[0]
         X_inner_val = data[1]
