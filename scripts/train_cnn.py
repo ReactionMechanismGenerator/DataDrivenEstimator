@@ -164,7 +164,8 @@ if __name__ == '__main__':
     predictor = Predictor(data_file=data_file,
                           save_tensors_dir=save_tensors_dir,
                           keep_tensors=keep_tensors,
-                          out_dir=out_dir)
+                          out_dir=out_dir,
+                          normalize=normalize)
     predictor.load_input(input_file)
     predictor.load_parameters(param_path=weights_file)
 
