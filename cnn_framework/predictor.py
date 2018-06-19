@@ -387,14 +387,19 @@ class Predictor(object):
             np.savez(fpath + '_mean_std.npz', mean=self.y_mean, std=self.y_std)
             logging.info('...saved y mean and standard deviation to {}_mean_std.npz'.format(fpath))
 
-    def predict(self, molecule):
-        molecule_tensor = get_molecule_tensor(molecule,
-                                              self.add_extra_atom_attribute,
-                                              self.add_extra_bond_attribute,
-                                              self.differentiate_atom_type,
-                                              self.differentiate_bond_type)
-        if self.padding:
-            molecule_tensor = pad_molecule_tensor(molecule_tensor, self.padding_final_size)
+    def predict(self, molecule=None, molecule_tensor=None):
+        """
+        Predict the output given a molecule. If a tensor is specified, it
+        overrides the molecule argument.
+        """
+        if molecule_tensor is None:
+            molecule_tensor = get_molecule_tensor(molecule,
+                                                  self.add_extra_atom_attribute,
+                                                  self.add_extra_bond_attribute,
+                                                  self.differentiate_atom_type,
+                                                  self.differentiate_bond_type)
+            if self.padding:
+                molecule_tensor = pad_molecule_tensor(molecule_tensor, self.padding_final_size)
         molecule_tensor_array = np.array([molecule_tensor])
         y_pred = self.model.predict(molecule_tensor_array)
 
@@ -405,3 +410,25 @@ class Predictor(object):
             return y_pred[0]
         else:
             return y_pred[0][0]
+
+    def evaluate(self, X, y):
+        """
+        Evaluate RMSE and MAE given a list or array of file names or tensors
+        and a list or array of outputs.
+        """
+        y_pred = []
+        for x in X:
+            if self.save_tensors_dir is not None:
+                x = np.load(x)
+            y_pred.append(self.predict(molecule_tensor=x))
+        y_pred = np.array(y_pred).flatten()
+        y = np.asarray(y)
+        if self.y_mean is not None and self.y_std is not None:
+            y = y * self.y_std + self.y_mean
+        y = y.flatten()
+
+        diff = y - y_pred
+        rmse = np.sqrt(np.dot(diff.T, diff) / len(y))
+        mae = np.sum(np.abs(diff)) / len(y)
+
+        return rmse, mae
