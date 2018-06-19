@@ -146,9 +146,19 @@ class Predictor(object):
             outer_val_losses.append(mean_outer_val_loss)
             test_losses.append(mean_test_loss)
 
+            # Calculate RMSEs and MAEs
+            train_rmse, train_mae = self.evaluate(X_train, y_train)
+            inner_val_rmse, inner_val_mae = self.evaluate(X_inner_val, y_inner_val)
+            outer_val_rmse, outer_val_mae = self.evaluate(X_outer_val, y_outer_val)
+            test_rmse, test_mae = self.evaluate(X_test, y_test)
+
             # save model and write fold report
             fpath = os.path.join(save_model_path, 'fold_{0}'.format(fold))
-            self.save_model(loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath)
+            self.save_model(loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath,
+                            train_rmse=train_rmse, train_mae=train_mae,
+                            inner_val_rmse=inner_val_rmse, inner_val_mae=inner_val_mae,
+                            outer_val_rmse=outer_val_rmse, outer_val_mae=outer_val_mae,
+                            test_rmse=test_rmse, test_mae=test_mae)
 
             # once finish training one fold, reset the model
             if pretrained_weights is not None:
@@ -247,9 +257,17 @@ class Predictor(object):
         inner_val_losses.append(inner_val_loss)
         test_losses.append(mean_test_loss)
 
+        # Calculate RMSEs and MAEs
+        train_rmse, train_mae = self.evaluate(X_train, y_train)
+        inner_val_rmse, inner_val_mae = self.evaluate(X_inner_val, y_inner_val)
+        test_rmse, test_mae = self.evaluate(X_test, y_test)
+
         # save model and write report
         fpath = os.path.join(save_model_path, 'full_train')
-        self.save_model(loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath)
+        self.save_model(loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath,
+                        train_rmse=train_rmse, train_mae=train_mae,
+                        inner_val_rmse=inner_val_rmse, inner_val_mae=inner_val_mae,
+                        test_rmse=test_rmse, test_mae=test_mae)
 
         # Delete tensor directory
         if self.save_tensors_dir is not None:
@@ -381,8 +399,8 @@ class Predictor(object):
     def reset_model(self):
         self.model = reset_model(self.model)
 
-    def save_model(self, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath):
-        save_model(self.model, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath)
+    def save_model(self, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath, **kwargs):
+        save_model(self.model, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath, **kwargs)
         if self.y_mean is not None and self.y_std is not None:
             np.savez(fpath + '_mean_std.npz', mean=self.y_mean, std=self.y_std)
             logging.info('...saved y mean and standard deviation to {}_mean_std.npz'.format(fpath))

@@ -260,7 +260,7 @@ def reset_model(model):
     return model
 
 
-def save_model(model, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath):
+def save_model(model, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath, **kwargs):
     """
     Saves NN model object and associated information.
 
@@ -271,8 +271,7 @@ def save_model(model, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss,
         mean_test_loss - mean loss on outer validation set
         mean_test_loss - mean loss on test set
         fpath - root filepath to save everything to (with .json, h5, png, info
-        config - the configuration dictionary that defined this model
-        tstamp - current timestamp to log in info file
+        kwargs - other keyword arguments for write_loss_report
     """
 
     # Dump data
@@ -296,7 +295,8 @@ def save_model(model, loss, inner_val_loss, mean_outer_val_loss, mean_test_loss,
 
     mean_loss = loss[-1]
     mean_inner_val_loss = inner_val_loss[-1]
-    write_loss_report(mean_loss, mean_inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath + '_loss_report.txt')
+    write_loss_report(mean_loss, mean_inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath + '_loss_report.txt',
+                      **kwargs)
     logging.info('...saved history')
 
     logging.info('...saved model to {}.[json, h5, png]'.format(fpath))
@@ -324,7 +324,11 @@ def save_model_history_manual(loss, val_loss, fpath):
     fid.close()
 
 
-def write_loss_report(mean_loss, mean_inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath):
+def write_loss_report(mean_loss, mean_inner_val_loss, mean_outer_val_loss, mean_test_loss, fpath,
+                      train_rmse=None, train_mae=None,
+                      inner_val_rmse=None, inner_val_mae=None,
+                      outer_val_rmse=None, outer_val_mae=None,
+                      test_rmse=None, test_mae=None):
 
     """
     Write training, validation and test mean loss
@@ -334,6 +338,22 @@ def write_loss_report(mean_loss, mean_inner_val_loss, mean_outer_val_loss, mean_
     print("{:50} {}".format("Inner Validation loss (mse):", mean_inner_val_loss), file=loss_report)
     print("{:50} {}".format("Outer Validation loss (mse):", mean_outer_val_loss), file=loss_report)
     print("{:50} {:.4f}".format("Test loss (mse):", mean_test_loss), file=loss_report)
+
+    # Format statistics
+    s = 'Statistics (unnormalized units):\n'
+    s += '           RMSE   MAE\n'
+    if train_rmse is not None:
+        s += 'Train      {:5.2f}  {:5.2f}\n'.format(train_rmse, train_mae)
+    if inner_val_rmse is not None:
+        s += 'Inner val  {:5.2f}  {:5.2f}\n'.format(inner_val_rmse, inner_val_mae)
+    if outer_val_rmse is not None:
+        s += 'Outer val  {:5.2f}  {:5.2f}\n'.format(outer_val_rmse, outer_val_mae)
+    if test_rmse is not None:
+        s += 'Test       {:5.2f}  {:5.2f}'.format(test_rmse, test_mae)
+
+    # Write statistics
+    logging.info(s)
+    print(s, file=loss_report)
 
     # Close file
     loss_report.close()
