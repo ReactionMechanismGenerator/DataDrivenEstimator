@@ -15,7 +15,6 @@ class EnsembleModel(Model):
     def gen_mask(self, seed):
         rng = np.random.RandomState()
         if seed is not None:
-            #np.random.seed(seed)
             rng.seed(seed)
         for layer in self.layers:
             if 'gen_mask' in dir(layer):
