@@ -261,8 +261,8 @@ class TestPredictor(unittest.TestCase):
         lr_func = "float({0} * np.exp(- epoch / {1}))".format(0.0007, 30.0)
         self.predictor.full_train(lr_func, save_model_path, nb_epoch=2, training_ratio=1.0, testing_ratio=0.0)
 
-        self.assertTrue(os.path.exists(os.path.join(out_dir, 'smis_test.txt')))
-        self.assertTrue(os.path.exists(os.path.join(out_dir, 'smis_train.txt')))
+        self.assertTrue(os.path.exists(os.path.join(out_dir, 'identifiers_test.txt')))
+        self.assertTrue(os.path.exists(os.path.join(out_dir, 'identifiers_train.txt')))
         self.assertTrue(os.path.exists(os.path.join(save_model_path, 'current_model.h5')))
         self.assertTrue(os.path.exists(os.path.join(save_model_path, 'full_train.h5')))
         self.assertTrue(os.path.exists(os.path.join(save_model_path, 'full_train.hist')))

@@ -309,14 +309,14 @@ def prepare_full_train_data_from_file(datafile,
                                       save_tensors_dir=None,
                                       testing_ratio=0.0,
                                       meta_dir=None):
-    smiles, y = [], []
+    identifiers, y = [], []
     with open(datafile) as df:
         for line in df:
             line_split = line.strip().split()
             if line_split:
-                smi = line_split[0]
+                identifier = line_split[0]
                 ysingle = [float(yi) for yi in line_split[1:]]
-                smiles.append(smi)
+                identifiers.append(identifier)
                 y.append(ysingle)
     y = np.array(y).astype(np.float32)
 
@@ -326,8 +326,11 @@ def prepare_full_train_data_from_file(datafile,
             os.makedirs(save_tensors_dir)
 
         X = []
-        for fidx, smi in enumerate(smiles):
-            mol = Molecule().fromSMILES(smi)
+        for fidx, identifier in enumerate(identifiers):
+            if identifier.startswith('InChI'):
+                mol = Molecule().fromInChI(identifier, backend='rdkit-first')
+            else:
+                mol = Molecule().fromSMILES(identifier)
             x = get_molecule_tensor(mol,
                                     add_extra_atom_attribute=add_extra_atom_attribute,
                                     add_extra_bond_attribute=add_extra_bond_attribute,
@@ -340,8 +343,11 @@ def prepare_full_train_data_from_file(datafile,
             X.append(fname)
     else:
         X = []
-        for smi in smiles:
-            mol = Molecule().fromSMILES(smi)
+        for identifier in identifiers:
+            if identifier.startswith('InChI'):
+                mol = Molecule().fromInChI(identifier)
+            else:
+                mol = Molecule().fromSMILES(identifier)
             x = get_molecule_tensor(mol,
                                     add_extra_atom_attribute=add_extra_atom_attribute,
                                     add_extra_bond_attribute=add_extra_bond_attribute,
@@ -354,23 +360,23 @@ def prepare_full_train_data_from_file(datafile,
     logging.info('Splitting dataset with testing ratio of {}...'.format(testing_ratio))
     split_data = split_test_from_train_and_val(X,
                                                y,
-                                               extra_data=smiles,
+                                               extra_data=identifiers,
                                                shuffle_seed=0,
                                                testing_ratio=testing_ratio)
 
-    X_test, y_test, X_train, y_train, smis_test, smis_train = split_data
+    X_test, y_test, X_train, y_train, identifiers_test, identifiers_train = split_data
 
     if save_meta:
-        smis_test_string = '\n'.join(smis_test)
-        smis_train_string = '\n'.join(smis_train)
+        identifiers_test_string = '\n'.join(identifiers_test)
+        identifiers_train_string = '\n'.join(identifiers_train)
         if meta_dir is None:
             meta_dir = os.getcwd()
-        smis_test_path = os.path.join(meta_dir, 'smis_test.txt')
-        smis_train_path = os.path.join(meta_dir, 'smis_train.txt')
-        with open(smis_test_path, 'w') as f_in:
-            f_in.write(smis_test_string)
-        with open(smis_train_path, 'w') as f_in:
-            f_in.write(smis_train_string)
+        identifiers_test_path = os.path.join(meta_dir, 'identifiers_test.txt')
+        identifiers_train_path = os.path.join(meta_dir, 'identifiers_train.txt')
+        with open(identifiers_test_path, 'w') as f_in:
+            f_in.write(identifiers_test_string)
+        with open(identifiers_train_path, 'w') as f_in:
+            f_in.write(identifiers_train_string)
     
     return X_test, y_test, X_train, y_train
 

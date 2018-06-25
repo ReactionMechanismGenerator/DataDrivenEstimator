@@ -26,7 +26,7 @@ def parse_command_line_arguments():
 
     parser.add_argument('-d', '--data', metavar='FILE',
                         help='A file specifying which datasets to train on. Alternatively, a space-separated .csv file'
-                             ' with SMILES and output(s) in the first and subsequent columns, respectively.')
+                             ' with SMILES/InChI and output(s) in the first and subsequent columns, respectively.')
 
     parser.add_argument('-o', '--out_dir', metavar='DIR', default=os.getcwd(),
                         help='Output directory')
