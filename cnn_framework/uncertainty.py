@@ -29,7 +29,6 @@ class EnsembleModel(Model):
         loss = super(EnsembleModel,self).train_on_batch(x, y, **kwargs)
         return loss
 
-    
     def test_on_batch(self, x, y, **kwargs):   
         seed = np.random.choice(self.seeds)
         self.gen_mask(seed)

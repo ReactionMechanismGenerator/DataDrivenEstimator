@@ -70,7 +70,7 @@ class TestCNNModel(unittest.TestCase):
                                  dropout_rate_outer=dropout_rate_outer,
                                  dropout_rate_hidden=dropout_rate_hidden, 
                                  dropout_rate_output=dropout_rate_output,
-                                 padding_final_size = 50
+                                 padding_final_size = padding_final_size
                                  )
         self.assertEqual(len(test_model.seeds), n_model)
         self.assertTrue(isinstance(test_model, EnsembleModel))

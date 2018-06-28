@@ -320,3 +320,28 @@ class TestPredictor(unittest.TestCase):
         self.predictor.keep_tensors = False
         self.predictor.out_dir = None
         shutil.rmtree(out_dir)
+        
+    def test_ensemble_predictor(self):
+        test_predictor_input = os.path.join(os.path.dirname(cnn_framework.__file__),
+                                            'test_data',
+                                            'ensemble_predictor',
+                                            'predictor_input.py'
+                                            )
+        test_predictor_architecture = os.path.join(os.path.dirname(cnn_framework.__file__),
+                                            'test_data',
+                                            'ensemble_predictor',
+                                            'fold_0.json'
+                                            )
+        test_predictor_parameters = os.path.join(os.path.dirname(cnn_framework.__file__),
+                                            'test_data',
+                                            'ensemble_predictor',
+                                            'fold_0.h5'
+                                            )
+        self.predictor.load_input(test_predictor_input)
+        self.predictor.load_architecture(test_predictor_architecture)
+        self.predictor.load_parameters(test_predictor_parameters)
+        y_avg, y_std = self.predictor.predict(Molecule().fromSMILES('CCC1CC(C)(C)C1'),sigma=True)
+        expected_y_avg = -21.4971179962
+        expected_y_std = 0.89726549387
+        self.assertAlmostEqual(expected_y_avg, y_avg, 2)
+        self.assertAlmostEqual(expected_y_std, y_std, 2)
