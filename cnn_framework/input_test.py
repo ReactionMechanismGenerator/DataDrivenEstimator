@@ -1,29 +1,31 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
 
+import os
 import unittest
 import cnn_framework
-from .predictor import Predictor
-from .input import *
-from .layers import MoleculeConv
+from cnn_framework.predictor import Predictor
+from cnn_framework.input import read_input_file
+from cnn_framework.layers import MoleculeConv
 from keras.layers.core import Dense
 
-class Test_Input(unittest.TestCase):
 
-	def test_read_input_file(self):
+class TestInput(unittest.TestCase):
 
-		predictor_test = Predictor()
+    def test_read_input_file(self):
 
-		path = os.path.join(os.path.dirname(cnn_framework.__file__),
-											'test_data', 
-											'minimal_predictor', 
-											'predictor_input.py'
-											)
-		read_input_file(path, predictor_test)
+        predictor_test = Predictor()
 
-		predictor_model = predictor_test.model
-		self.assertEqual(len(predictor_model.layers), 3)
-		self.assertTrue(isinstance(predictor_model.layers[0], MoleculeConv))
-		self.assertTrue(isinstance(predictor_model.layers[1], Dense))
+        path = os.path.join(os.path.dirname(cnn_framework.__file__),
+                            'test_data',
+                            'minimal_predictor',
+                            'predictor_input.py')
+        read_input_file(path, predictor_test)
 
-		self.assertEqual(predictor_model.layers[0].inner_dim, 38)
-		self.assertEqual(predictor_model.layers[0].units, 512)
+        predictor_model = predictor_test.model
+        self.assertEqual(len(predictor_model.layers), 3)
+        self.assertTrue(isinstance(predictor_model.layers[0], MoleculeConv))
+        self.assertTrue(isinstance(predictor_model.layers[1], Dense))
 
+        self.assertEqual(predictor_model.layers[0].inner_dim, 38)
+        self.assertEqual(predictor_model.layers[0].units, 512)
