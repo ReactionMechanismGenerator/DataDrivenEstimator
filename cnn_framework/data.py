@@ -143,15 +143,12 @@ def prepare_folded_data_from_multiple_datasets(datasets,
             X = X_new
 
         logging.info('Splitting dataset with testing ratio of {0}...'.format(testing_ratio))
-        split_data = split_test_from_train_and_val(X,
-                                                   y,
-                                                   shuffle_seed=0,
-                                                   testing_ratio=testing_ratio)
+        split_data = split_test_from_train_and_val(X, y, testing_ratio=testing_ratio)
 
         (X_test, y_test, X_train_and_val, y_train_and_val) = split_data
 
         test_data_datasets.append((X_test, y_test))
-        (folded_Xs, folded_ys) = prepare_folded_data(X_train_and_val, y_train_and_val, folds, shuffle_seed=2)
+        (folded_Xs, folded_ys) = prepare_folded_data(X_train_and_val, y_train_and_val, folds)
         folded_datasets.append((folded_Xs, folded_ys))
 
     # merge into one folded_Xs and folded_ys
@@ -232,11 +229,7 @@ def prepare_full_train_data_from_multiple_datasets(datasets,
             X = X_new
 
         logging.info('Splitting dataset with testing ratio of {0}...'.format(testing_ratio))
-        split_data = split_test_from_train_and_val(X,
-                                                   y,
-                                                   smis,
-                                                   shuffle_seed=0,
-                                                   testing_ratio=testing_ratio)
+        split_data = split_test_from_train_and_val(X, y, smis, testing_ratio=testing_ratio)
 
         (X_test, y_test, X_train, y_train, smis_test, smis_train) = split_data
 
@@ -294,7 +287,7 @@ def prepare_folded_data_from_file(datafile,
                                                    save_tensors_dir=save_tensors_dir,
                                                    testing_ratio=testing_ratio)
     X_test, y_test, X_train_and_val, y_train_and_val = split_data
-    folded_Xs, folded_ys = prepare_folded_data(X_train_and_val, y_train_and_val, folds, shuffle_seed=2)
+    folded_Xs, folded_ys = prepare_folded_data(X_train_and_val, y_train_and_val, folds)
     return X_test, y_test, folded_Xs, folded_ys
 
 
@@ -358,11 +351,7 @@ def prepare_full_train_data_from_file(datafile,
             X.append(x)
 
     logging.info('Splitting dataset with testing ratio of {}...'.format(testing_ratio))
-    split_data = split_test_from_train_and_val(X,
-                                               y,
-                                               extra_data=identifiers,
-                                               shuffle_seed=0,
-                                               testing_ratio=testing_ratio)
+    split_data = split_test_from_train_and_val(X, y, extra_data=identifiers, testing_ratio=testing_ratio)
 
     X_test, y_test, X_train, y_train, identifiers_test, identifiers_train = split_data
 

@@ -113,7 +113,6 @@ class Predictor(object):
             data = prepare_data_one_fold(folded_Xs,
                                          folded_ys,
                                          current_fold=fold,
-                                         shuffle_seed=4,
                                          training_ratio=training_ratio)
 
             # execute train_model
@@ -317,7 +316,6 @@ class Predictor(object):
             data = prepare_data_one_fold(folded_Xs,
                                          folded_ys,
                                          current_fold=fold,
-                                         shuffle_seed=4,
                                          training_ratio=training_ratio)
 
             X_train, X_inner_val, X_outer_val, y_train, y_inner_val, y_outer_val = data

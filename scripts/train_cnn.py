@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-from cnn_framework.predictor import Predictor
+
 import os
 import sys
 import logging
 import argparse
 import shutil
 import time
+import numpy as np
 
 
 def parse_command_line_arguments():
@@ -66,6 +67,9 @@ def parse_command_line_arguments():
     parser.add_argument('-pc', '--patience', type=int, default=10,
                         help='Number of consecutive epochs allowed for loss increase before stopping early.'
                              ' Note: A value of -1 indicates that the best model will NOT be saved!')
+
+    parser.add_argument('-s', '--seed', type=int, default=0,
+                        help='Numpy random seed')
 
     return parser.parse_args()
 ################################################################################
@@ -146,6 +150,9 @@ if __name__ == '__main__':
     batch_size = args.batch_size
     nb_epoch = args.nb_epoch
     patience = args.patience
+    seed = args.seed
+    np.random.seed(seed)
+    
     lr0, lr1 = [float(i) for i in args.learning_rate.split('_')]
 
     if not os.path.exists(out_dir):
@@ -160,7 +167,9 @@ if __name__ == '__main__':
     from rmgpy.rmg.main import RMG
     rmg = RMG()
     rmg.logHeader()
-
+    
+    # Importing Keras should happend after setting random seed of Numpy
+    from cnn_framework.predictor import Predictor
     predictor = Predictor(data_file=data_file,
                           save_tensors_dir=save_tensors_dir,
                           keep_tensors=keep_tensors,
