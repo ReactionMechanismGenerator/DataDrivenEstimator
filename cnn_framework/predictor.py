@@ -417,6 +417,9 @@ class Predictor(object):
         Predict the output given a molecule. If a tensor is specified, it
         overrides the molecule argument.
         """
+        if molecule is None and molecule_tensor is None:
+            raise Exception('No molecule is specified...')
+
         if molecule_tensor is None:
             molecule_tensor = get_molecule_tensor(molecule,
                                                   self.add_extra_atom_attribute,
