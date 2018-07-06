@@ -3,11 +3,13 @@
 
 import os
 import unittest
+
+from keras.layers.core import Dense
+
 import dde
 from dde.predictor import Predictor
 from dde.input import read_input_file
 from dde.layers import MoleculeConv
-from keras.layers.core import Dense
 
 
 class TestInput(unittest.TestCase):

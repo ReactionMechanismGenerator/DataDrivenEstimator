@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-
-import os
-import sys
-import logging
 import argparse
+import logging
+import os
 import shutil
+import sys
 import time
+
 import numpy as np
 
 
@@ -168,7 +168,7 @@ if __name__ == '__main__':
     rmg = RMG()
     rmg.logHeader()
     
-    # Importing Keras should happend after setting random seed of Numpy
+    # Importing Keras should happen after setting random seed of Numpy
     from dde.predictor import Predictor
     predictor = Predictor(data_file=data_file,
                           save_tensors_dir=save_tensors_dir,

@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-from dde.predictor import Predictor
-from dde.layers import MoleculeConv
-from keras.layers.core import Dense
-import unittest
 import os
 import shutil
+import unittest
+
 import numpy as np
-import dde
+from keras.layers.core import Dense
 from rmgpy.molecule import Molecule
+
+import dde
+from dde.predictor import Predictor
+from dde.layers import MoleculeConv
 
 
 class TestPredictor(unittest.TestCase):

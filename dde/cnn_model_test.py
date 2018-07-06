@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
+import unittest
+import os
+
+from keras.layers.core import Dense
+
+import dde
 from dde.cnn_model import build_model, save_model
 from dde.layers import MoleculeConv
 from dde.uncertainty import RandomMask, EnsembleModel
-from keras.layers.core import Dense
-import unittest
-import dde
-import os
 
 
 class TestCNNModel(unittest.TestCase):

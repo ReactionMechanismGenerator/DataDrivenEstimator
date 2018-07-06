@@ -3,6 +3,7 @@
 
 import os
 import logging
+
 from dde.cnn_model import build_model
 from dde.molecule_tensor import get_attribute_vector_size
 

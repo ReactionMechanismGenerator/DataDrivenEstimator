@@ -1,21 +1,22 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
+import logging
+import json
+import os
+import shutil
+
+import numpy as np
+from keras.callbacks import EarlyStopping
+
 from dde.cnn_model import build_model, train_model, reset_model, save_model, write_loss_report
 from dde.input import read_input_file
 from dde.molecule_tensor import get_molecule_tensor, pad_molecule_tensor
-import os
-import shutil
-import rmgpy
-import numpy as np
 from dde.data import (prepare_data_one_fold, prepare_folded_data_from_multiple_datasets,
                       prepare_full_train_data_from_multiple_datasets, split_inner_val_from_train_data,
                       prepare_folded_data_from_file, prepare_full_train_data_from_file)
-import logging
-from keras.callbacks import EarlyStopping
-import json
-from .layers import MoleculeConv
-from .uncertainty import RandomMask, EnsembleModel
+from dde.layers import MoleculeConv
+from dde.uncertainty import RandomMask, EnsembleModel
 
 
 class Predictor(object):
