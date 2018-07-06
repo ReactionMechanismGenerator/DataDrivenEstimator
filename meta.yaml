@@ -35,6 +35,6 @@ test:
     - make -C $SRC_DIR test-cnn [unix]
 
 about:
-  home: http://github.com/KEHANG/DataDrivenEstimator
+  home: https://github.com/ReactionMechanismGenerator/DataDrivenEstimator
   license: MIT
   summary: "A package of major data driven estimators for thermochemistry and kinetics."
