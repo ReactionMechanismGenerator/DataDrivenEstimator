@@ -5,11 +5,11 @@ import os
 import shutil
 import unittest
 
-import cnn_framework
-from cnn_framework.data import (get_data_from_db, prepare_folded_data, split_inner_val_from_train_data,
-                                prepare_data_one_fold, prepare_folded_data_from_multiple_datasets,
-                                prepare_full_train_data_from_multiple_datasets, split_test_from_train_and_val,
-                                prepare_full_train_data_from_file, prepare_folded_data_from_file)
+import dde
+from dde.data import (get_data_from_db, prepare_folded_data, split_inner_val_from_train_data,
+                      prepare_data_one_fold, prepare_folded_data_from_multiple_datasets,
+                      prepare_full_train_data_from_multiple_datasets, split_test_from_train_and_val,
+                      prepare_full_train_data_from_file, prepare_folded_data_from_file)
 
 
 class TestData(unittest.TestCase):
@@ -179,10 +179,10 @@ class TestData(unittest.TestCase):
         self.assertEqual(len(y_train_and_val), 162)
 
     def test_prepare_full_train_data_from_file(self):
-        datafile = os.path.join(os.path.dirname(cnn_framework.__file__),
+        datafile = os.path.join(os.path.dirname(dde.__file__),
                                 'test_data',
                                 'datafile.csv')
-        tensors_dir = os.path.join(os.path.dirname(cnn_framework.__file__),
+        tensors_dir = os.path.join(os.path.dirname(dde.__file__),
                                    'test_data',
                                    'tensors')
 
@@ -208,7 +208,7 @@ class TestData(unittest.TestCase):
         shutil.rmtree(tensors_dir)
 
     def test_prepare_folded_data_from_file(self):
-        datafile = os.path.join(os.path.dirname(cnn_framework.__file__),
+        datafile = os.path.join(os.path.dirname(dde.__file__),
                                 'test_data',
                                 'datafile.csv')
 

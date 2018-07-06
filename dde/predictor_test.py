@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-from cnn_framework.predictor import Predictor
-from cnn_framework.layers import MoleculeConv
+from dde.predictor import Predictor
+from dde.layers import MoleculeConv
 from keras.layers.core import Dense
 import unittest
 import os
 import shutil
 import numpy as np
-import cnn_framework
+import dde
 from rmgpy.molecule import Molecule
 
 
@@ -31,7 +31,7 @@ class TestPredictor(unittest.TestCase):
 
     def test_load_input(self):
 
-        test_predictor_input = os.path.join(os.path.dirname(cnn_framework.__file__),
+        test_predictor_input = os.path.join(os.path.dirname(dde.__file__),
                                             'test_data',
                                             'minimal_predictor',
                                             'predictor_input.py'
@@ -74,7 +74,7 @@ class TestPredictor(unittest.TestCase):
         """
         Test the datasets specification is done properly
         """
-        datasets_file = os.path.join(os.path.dirname(cnn_framework.__file__),
+        datasets_file = os.path.join(os.path.dirname(dde.__file__),
                                      'test_data',
                                      'minimal_predictor',
                                      'datasets.txt')
@@ -86,13 +86,13 @@ class TestPredictor(unittest.TestCase):
 
     def test_load_parameters(self):
 
-        test_predictor_input = os.path.join(os.path.dirname(cnn_framework.__file__),
+        test_predictor_input = os.path.join(os.path.dirname(dde.__file__),
                                             'test_data',
                                             'minimal_predictor',
                                             'predictor_input.py')
         self.predictor.load_input(test_predictor_input)
 
-        param_path = os.path.join(os.path.dirname(cnn_framework.__file__),
+        param_path = os.path.join(os.path.dirname(dde.__file__),
                                   'test_data',
                                   'minimal_predictor',
                                   'weights.h5')
@@ -119,7 +119,7 @@ class TestPredictor(unittest.TestCase):
         we should change weights.h5 every time we change feature space
         """
 
-        test_predictor_input = os.path.join(os.path.dirname(cnn_framework.__file__),
+        test_predictor_input = os.path.join(os.path.dirname(dde.__file__),
                                             'test_data',
                                             'minimal_predictor',
                                             'predictor_input.py')
@@ -127,7 +127,7 @@ class TestPredictor(unittest.TestCase):
         self.assertTrue(self.predictor.add_extra_atom_attribute)
         self.assertTrue(self.predictor.add_extra_bond_attribute)
 
-        param_path = os.path.join(os.path.dirname(cnn_framework.__file__),
+        param_path = os.path.join(os.path.dirname(dde.__file__),
                                   'test_data',
                                   'minimal_predictor',
                                   'weights.h5')
@@ -182,24 +182,24 @@ class TestPredictor(unittest.TestCase):
         self.predictor.y_std = None
 
     def test_kfcv_train(self):
-        test_predictor_input = os.path.join(os.path.dirname(cnn_framework.__file__),
+        test_predictor_input = os.path.join(os.path.dirname(dde.__file__),
                                             'test_data',
                                             'minimal_predictor',
                                             'predictor_input.py')
         self.predictor.load_input(test_predictor_input)
-        param_path = os.path.join(os.path.dirname(cnn_framework.__file__),
+        param_path = os.path.join(os.path.dirname(dde.__file__),
                                   'test_data',
                                   'minimal_predictor',
                                   'weights.h5')
         self.predictor.load_parameters(param_path)
 
-        datafile = os.path.join(os.path.dirname(cnn_framework.__file__),
+        datafile = os.path.join(os.path.dirname(dde.__file__),
                                 'test_data',
                                 'datafile.csv')
         self.predictor.data_file = datafile
         self.predictor.get_data_from_file = True
 
-        out_dir = os.path.join(os.path.dirname(cnn_framework.__file__),
+        out_dir = os.path.join(os.path.dirname(dde.__file__),
                                'test_data',
                                'test_out')
         self.predictor.out_dir = out_dir
@@ -236,19 +236,19 @@ class TestPredictor(unittest.TestCase):
     def test_full_train(self):
         self.predictor.normalize = True
 
-        test_predictor_input = os.path.join(os.path.dirname(cnn_framework.__file__),
+        test_predictor_input = os.path.join(os.path.dirname(dde.__file__),
                                             'test_data',
                                             'minimal_predictor',
                                             'predictor_input.py')
         self.predictor.load_input(test_predictor_input)
 
-        datafile = os.path.join(os.path.dirname(cnn_framework.__file__),
+        datafile = os.path.join(os.path.dirname(dde.__file__),
                                 'test_data',
                                 'datafile.csv')
         self.predictor.data_file = datafile
         self.predictor.get_data_from_file = True
 
-        out_dir = os.path.join(os.path.dirname(cnn_framework.__file__),
+        out_dir = os.path.join(os.path.dirname(dde.__file__),
                                'test_data',
                                'test_out')
         self.predictor.out_dir = out_dir
@@ -280,19 +280,19 @@ class TestPredictor(unittest.TestCase):
         shutil.rmtree(out_dir)
 
     def test_kfcv_batch_train(self):
-        test_predictor_input = os.path.join(os.path.dirname(cnn_framework.__file__),
+        test_predictor_input = os.path.join(os.path.dirname(dde.__file__),
                                             'test_data',
                                             'minimal_predictor',
                                             'predictor_input.py')
         self.predictor.load_input(test_predictor_input)
 
-        datafile = os.path.join(os.path.dirname(cnn_framework.__file__),
+        datafile = os.path.join(os.path.dirname(dde.__file__),
                                 'test_data',
                                 'datafile.csv')
         self.predictor.data_file = datafile
         self.predictor.get_data_from_file = True
 
-        out_dir = os.path.join(os.path.dirname(cnn_framework.__file__),
+        out_dir = os.path.join(os.path.dirname(dde.__file__),
                                'test_data',
                                'test_out')
         self.predictor.out_dir = out_dir
@@ -302,7 +302,7 @@ class TestPredictor(unittest.TestCase):
         if not os.path.exists(save_model_path):
             os.mkdir(save_model_path)
 
-        weights_file = os.path.join(os.path.dirname(cnn_framework.__file__),
+        weights_file = os.path.join(os.path.dirname(dde.__file__),
                                     'test_data',
                                     'minimal_predictor',
                                     'weights.h5')
@@ -322,21 +322,21 @@ class TestPredictor(unittest.TestCase):
         shutil.rmtree(out_dir)
         
     def test_ensemble_predictor(self):
-        test_predictor_input = os.path.join(os.path.dirname(cnn_framework.__file__),
+        test_predictor_input = os.path.join(os.path.dirname(dde.__file__),
                                             'test_data',
                                             'ensemble_predictor',
                                             'predictor_input.py'
                                             )
-        test_predictor_architecture = os.path.join(os.path.dirname(cnn_framework.__file__),
+        test_predictor_architecture = os.path.join(os.path.dirname(dde.__file__),
                                             'test_data',
                                             'ensemble_predictor',
                                             'fold_0.json'
-                                            )
-        test_predictor_parameters = os.path.join(os.path.dirname(cnn_framework.__file__),
+                                                   )
+        test_predictor_parameters = os.path.join(os.path.dirname(dde.__file__),
                                             'test_data',
                                             'ensemble_predictor',
                                             'fold_0.h5'
-                                            )
+                                                 )
         self.predictor.load_input(test_predictor_input)
         self.predictor.load_architecture(test_predictor_architecture)
         self.predictor.load_parameters(test_predictor_parameters)

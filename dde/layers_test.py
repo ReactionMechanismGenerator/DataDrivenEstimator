@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-from cnn_framework import layers
+from dde import layers
 import keras.backend as K
 from keras.engine import Model, Input
 from keras.models import Sequential

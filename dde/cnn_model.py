@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 
 from __future__ import print_function
-from cnn_framework.layers import MoleculeConv
+from dde.layers import MoleculeConv
 from .uncertainty import RandomMask, EnsembleModel
 from keras.models import Model
 from keras.layers import Input

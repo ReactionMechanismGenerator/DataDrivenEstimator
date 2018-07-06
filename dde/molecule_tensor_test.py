@@ -2,9 +2,9 @@
 # -*- coding:utf-8 -*-
 
 import unittest
-from cnn_framework.molecule_tensor import (get_atom_attributes, get_bond_attributes, get_attribute_vector_size,
-                                           is_atom_in_ring, is_bond_conjugated, is_bond_in_ring,
-                                           get_molecule_tensor, pad_molecule_tensor)
+from dde.molecule_tensor import (get_atom_attributes, get_bond_attributes, get_attribute_vector_size,
+                                 is_atom_in_ring, is_bond_conjugated, is_bond_in_ring,
+                                 get_molecule_tensor, pad_molecule_tensor)
 from rmgpy.molecule import Molecule
 import numpy as np
 from numpy.testing import assert_allclose

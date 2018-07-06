@@ -3,8 +3,8 @@
 
 import os
 import logging
-from cnn_framework.cnn_model import build_model
-from cnn_framework.molecule_tensor import get_attribute_vector_size
+from dde.cnn_model import build_model
+from dde.molecule_tensor import get_attribute_vector_size
 
 predictor = None
 

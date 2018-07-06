@@ -4,7 +4,7 @@
 import logging
 import os
 import numpy as np
-from cnn_framework.molecule_tensor import get_molecule_tensor
+from dde.molecule_tensor import get_molecule_tensor
 from pymongo import MongoClient
 from nose.plugins.attrib import attr
 from rmgpy.molecule import Molecule

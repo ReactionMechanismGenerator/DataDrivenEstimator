@@ -169,7 +169,7 @@ if __name__ == '__main__':
     rmg.logHeader()
     
     # Importing Keras should happend after setting random seed of Numpy
-    from cnn_framework.predictor import Predictor
+    from dde.predictor import Predictor
     predictor = Predictor(data_file=data_file,
                           save_tensors_dir=save_tensors_dir,
                           keep_tensors=keep_tensors,

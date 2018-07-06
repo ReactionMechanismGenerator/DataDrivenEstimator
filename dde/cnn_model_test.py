@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-from cnn_framework.cnn_model import build_model, save_model
-from cnn_framework.layers import MoleculeConv
-from cnn_framework.uncertainty import RandomMask, EnsembleModel
+from dde.cnn_model import build_model, save_model
+from dde.layers import MoleculeConv
+from dde.uncertainty import RandomMask, EnsembleModel
 from keras.layers.core import Dense
 import unittest
-import cnn_framework
+import dde
 import os
 
 
@@ -38,7 +38,7 @@ class TestCNNModel(unittest.TestCase):
                                  hidden=hidden
                                  )
 
-        save_model_folder = os.path.join(os.path.dirname(cnn_framework.__file__),
+        save_model_folder = os.path.join(os.path.dirname(dde.__file__),
                                          'test_data',
                                          'save_model_test')
         if not os.path.exists(save_model_folder):

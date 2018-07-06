@@ -29,7 +29,7 @@ test:
   requires:
     - nose
   imports:
-    - cnn_framework
+    - dde
   commands:
     - export KERAS_BACKEND=theano
     - make -C $SRC_DIR test-cnn [unix]
