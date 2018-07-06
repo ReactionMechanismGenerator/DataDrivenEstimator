@@ -14,6 +14,8 @@ from cnn_framework.data import (prepare_data_one_fold, prepare_folded_data_from_
 import logging
 from keras.callbacks import EarlyStopping
 import json
+from .layers import MoleculeConv
+from .uncertainty import RandomMask, EnsembleModel
 
 
 class Predictor(object):
@@ -111,7 +113,6 @@ class Predictor(object):
             data = prepare_data_one_fold(folded_Xs,
                                          folded_ys,
                                          current_fold=fold,
-                                         shuffle_seed=4,
                                          training_ratio=training_ratio)
 
             # execute train_model
@@ -315,7 +316,6 @@ class Predictor(object):
             data = prepare_data_one_fold(folded_Xs,
                                          folded_ys,
                                          current_fold=fold,
-                                         shuffle_seed=4,
                                          training_ratio=training_ratio)
 
             X_train, X_inner_val, X_outer_val, y_train, y_inner_val, y_outer_val = data
@@ -377,6 +377,13 @@ class Predictor(object):
         if self.save_tensors_dir is not None:
             if not self.keep_tensors:
                 shutil.rmtree(self.save_tensors_dir)
+    
+    def load_architecture(self, param_path=None):
+        from keras.models import model_from_json
+        f = open(param_path,'r').read()
+        self.model = model_from_json(json.loads(f), 
+            custom_objects={"EnsembleModel":EnsembleModel,
+            "RandomMask":RandomMask, "MoleculeConv":MoleculeConv})
 
     def normalize_output(self, y_train, *other_ys):
         y_train = np.asarray(y_train)
@@ -405,11 +412,14 @@ class Predictor(object):
             np.savez(fpath + '_mean_std.npz', mean=self.y_mean, std=self.y_std)
             logging.info('...saved y mean and standard deviation to {}_mean_std.npz'.format(fpath))
 
-    def predict(self, molecule=None, molecule_tensor=None):
+    def predict(self, molecule=None, molecule_tensor=None, sigma=False):
         """
         Predict the output given a molecule. If a tensor is specified, it
         overrides the molecule argument.
         """
+        if molecule is None and molecule_tensor is None:
+            raise Exception('No molecule is specified...')
+
         if molecule_tensor is None:
             molecule_tensor = get_molecule_tensor(molecule,
                                                   self.add_extra_atom_attribute,
@@ -419,15 +429,23 @@ class Predictor(object):
             if self.padding:
                 molecule_tensor = pad_molecule_tensor(molecule_tensor, self.padding_final_size)
         molecule_tensor_array = np.array([molecule_tensor])
-        y_pred = self.model.predict(molecule_tensor_array)
-
-        if self.y_mean is not None and self.y_std is not None:
-            y_pred = y_pred * self.y_std + self.y_mean
-
-        if self.prediction_task == "Cp(cal/mol/K)":
-            return y_pred[0]
+        if sigma:
+            y_pred, y_sigma = self.model.predict(molecule_tensor_array, sigma=sigma)
+            if self.y_mean is not None and self.y_std is not None:
+                y_pred = y_pred * self.y_std + self.y_mean
+                y_sigma = y_sigma * self.y_std
+            if self.prediction_task == "Cp(cal/mol/K)":
+                return y_pred[0], y_sigma[0]
+            else:
+                return y_pred[0][0], y_sigma[0][0]
         else:
-            return y_pred[0][0]
+            y_pred = self.model.predict(molecule_tensor_array)        
+            if self.y_mean is not None and self.y_std is not None:
+                y_pred = y_pred * self.y_std + self.y_mean
+            if self.prediction_task == "Cp(cal/mol/K)":
+                return y_pred[0]
+            else:
+                return y_pred[0][0]   
 
     def evaluate(self, X, y):
         """

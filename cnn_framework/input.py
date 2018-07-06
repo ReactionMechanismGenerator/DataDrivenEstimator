@@ -18,9 +18,16 @@ def predictor_model(prediction_task="Hf298(kcal/mol)",
                     padding=False, padding_final_size=20,
                     mol_conv_inner_activation='tanh',
                     mol_conv_outer_activation='softmax',
-                    hidden=0, hidden_activation='tanh',
+                    hidden=0, hidden_depth=1, hidden_activation='tanh',
                     output_activation='linear', output_size=1, 
-                    lr=0.01, optimizer='adam', loss='mse'):
+                    lr=0.01, optimizer='adam', loss='mse',
+                    dropout_rate_inner=0.0, dropout_rate_outer=0.0,
+                    dropout_rate_hidden=0.0, dropout_rate_output=0.0,
+                    n_model=None):
+                    
+    if dropout_rate_inner==0.0 and dropout_rate_outer==0.0 \
+        and dropout_rate_hidden==0.0 and dropout_rate_output==0.0:
+        n_model=None
     
     if attribute_vector_size is None:
         attribute_vector_size = get_attribute_vector_size(add_extra_atom_attribute, 
@@ -29,13 +36,15 @@ def predictor_model(prediction_task="Hf298(kcal/mol)",
                                                           differentiate_bond_type)
     
     model = build_model(embedding_size, attribute_vector_size, depth,
-                        scale_output,
-                        padding,
+                        scale_output, padding,
                         mol_conv_inner_activation,
                         mol_conv_outer_activation,
-                        hidden, hidden_activation,
+                        hidden, hidden_depth, hidden_activation,
                         output_activation, output_size,
-                        lr, optimizer, loss)
+                        lr, optimizer, loss,
+                        dropout_rate_inner, dropout_rate_outer,
+                        dropout_rate_hidden, dropout_rate_output,
+                        n_model, padding_final_size)
     
     predictor.prediction_task = prediction_task
     predictor.model = model

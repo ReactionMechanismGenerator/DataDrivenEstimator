@@ -143,15 +143,12 @@ def prepare_folded_data_from_multiple_datasets(datasets,
             X = X_new
 
         logging.info('Splitting dataset with testing ratio of {0}...'.format(testing_ratio))
-        split_data = split_test_from_train_and_val(X,
-                                                   y,
-                                                   shuffle_seed=0,
-                                                   testing_ratio=testing_ratio)
+        split_data = split_test_from_train_and_val(X, y, testing_ratio=testing_ratio)
 
         (X_test, y_test, X_train_and_val, y_train_and_val) = split_data
 
         test_data_datasets.append((X_test, y_test))
-        (folded_Xs, folded_ys) = prepare_folded_data(X_train_and_val, y_train_and_val, folds, shuffle_seed=2)
+        (folded_Xs, folded_ys) = prepare_folded_data(X_train_and_val, y_train_and_val, folds)
         folded_datasets.append((folded_Xs, folded_ys))
 
     # merge into one folded_Xs and folded_ys
@@ -232,11 +229,7 @@ def prepare_full_train_data_from_multiple_datasets(datasets,
             X = X_new
 
         logging.info('Splitting dataset with testing ratio of {0}...'.format(testing_ratio))
-        split_data = split_test_from_train_and_val(X,
-                                                   y,
-                                                   smis,
-                                                   shuffle_seed=0,
-                                                   testing_ratio=testing_ratio)
+        split_data = split_test_from_train_and_val(X, y, smis, testing_ratio=testing_ratio)
 
         (X_test, y_test, X_train, y_train, smis_test, smis_train) = split_data
 
@@ -294,7 +287,7 @@ def prepare_folded_data_from_file(datafile,
                                                    save_tensors_dir=save_tensors_dir,
                                                    testing_ratio=testing_ratio)
     X_test, y_test, X_train_and_val, y_train_and_val = split_data
-    folded_Xs, folded_ys = prepare_folded_data(X_train_and_val, y_train_and_val, folds, shuffle_seed=2)
+    folded_Xs, folded_ys = prepare_folded_data(X_train_and_val, y_train_and_val, folds)
     return X_test, y_test, folded_Xs, folded_ys
 
 
@@ -358,11 +351,7 @@ def prepare_full_train_data_from_file(datafile,
             X.append(x)
 
     logging.info('Splitting dataset with testing ratio of {}...'.format(testing_ratio))
-    split_data = split_test_from_train_and_val(X,
-                                               y,
-                                               extra_data=identifiers,
-                                               shuffle_seed=0,
-                                               testing_ratio=testing_ratio)
+    split_data = split_test_from_train_and_val(X, y, extra_data=identifiers, testing_ratio=testing_ratio)
 
     X_test, y_test, X_train, y_train, identifiers_test, identifiers_train = split_data
 
@@ -385,19 +374,20 @@ def prepare_full_train_data_from_file(datafile,
 def split_test_from_train_and_val(X, y, extra_data=None, shuffle_seed=None, testing_ratio=0.1):
 
     # Feed shuffle seed
+    rng = np.random.RandomState()
     if shuffle_seed is not None:
-        np.random.seed(shuffle_seed)
+        rng.seed(shuffle_seed)
 
     # Get random number generator state so that we can shuffle multiple arrays
-    rng_state = np.random.get_state()
+    rng_state = rng.get_state()
 
     # Shuffle data in place
-    np.random.shuffle(X)
-    np.random.set_state(rng_state)
-    np.random.shuffle(y)
+    rng.shuffle(X)
+    rng.set_state(rng_state)
+    rng.shuffle(y)
     if extra_data is not None:
-        np.random.set_state(rng_state)
-        np.random.shuffle(extra_data)
+        rng.set_state(rng_state)
+        rng.shuffle(extra_data)
 
     split = int(len(X) * testing_ratio)
     X_test, X_train_and_val = X[:split], X[split:]
@@ -405,11 +395,6 @@ def split_test_from_train_and_val(X, y, extra_data=None, shuffle_seed=None, test
 
     if extra_data is not None:
         extra_data_test, extra_data_train_and_val = extra_data[:split], extra_data[split:]
-
-    # reset np random seed to avoid side-effect on other methods
-    # relying on np.random
-    if shuffle_seed is not None:
-        np.random.seed()
 
     if extra_data is not None:
         return X_test, y_test, X_train_and_val, y_train_and_val, extra_data_test, extra_data_train_and_val
@@ -424,17 +409,18 @@ def prepare_folded_data(X, y, folds, shuffle_seed=None):
     logging.info('Total of {} input data points'.format(n))
     target_fold_size = int(np.ceil(float(n) / folds))
 
+    rng = np.random.RandomState()
     # Feed shuffle seed
     if shuffle_seed is not None:
-        np.random.seed(shuffle_seed)
+        rng.seed(shuffle_seed)
 
     # Get random number generator state so that we can shuffle multiple arrays
-    rng_state = np.random.get_state()
+    rng_state = rng.get_state()
 
     # Shuffle data in place
-    np.random.shuffle(X)
-    np.random.set_state(rng_state)
-    np.random.shuffle(y)
+    rng.shuffle(X)
+    rng.set_state(rng_state)
+    rng.shuffle(y)
 
     # Split up data
     folded_Xs = [X[i:i+target_fold_size] for i in range(0, n, target_fold_size)]
@@ -442,36 +428,27 @@ def prepare_folded_data(X, y, folds, shuffle_seed=None):
 
     logging.info('Split data into {} folds'.format(folds))
 
-    # reset np random seed to avoid side-effect on other methods
-    # relying on np.random
-    if shuffle_seed is not None:
-        np.random.seed()
-
     return folded_Xs, folded_ys
 
 
 def split_inner_val_from_train_data(X_train, y_train, shuffle_seed=None, training_ratio=0.9):
-
+    
+    rng = np.random.RandomState()
     # Define validation set as random 10% of training
     if shuffle_seed is not None:
-        np.random.seed(shuffle_seed)
+        rng.seed(shuffle_seed)
 
     # Get random number generator state so that we can shuffle multiple arrays
-    rng_state = np.random.get_state()
+    rng_state = rng.get_state()
 
     # Shuffle data in place
-    np.random.shuffle(X_train)
-    np.random.set_state(rng_state)
-    np.random.shuffle(y_train)
+    rng.shuffle(X_train)
+    rng.set_state(rng_state)
+    rng.shuffle(y_train)
 
     split = int(len(X_train) * training_ratio)
     X_train, X_inner_val = X_train[:split], X_train[split:]
     y_train, y_inner_val = y_train[:split], y_train[split:]
-
-    # reset np random seed to avoid side-effect on other methods
-    # relying on np.random
-    if shuffle_seed is not None:
-        np.random.seed()
 
     return X_train, X_inner_val, y_train, y_inner_val
 

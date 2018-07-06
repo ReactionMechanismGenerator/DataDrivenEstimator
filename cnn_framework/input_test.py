@@ -23,9 +23,9 @@ class TestInput(unittest.TestCase):
         read_input_file(path, predictor_test)
 
         predictor_model = predictor_test.model
-        self.assertEqual(len(predictor_model.layers), 3)
-        self.assertTrue(isinstance(predictor_model.layers[0], MoleculeConv))
-        self.assertTrue(isinstance(predictor_model.layers[1], Dense))
+        self.assertEqual(len(predictor_model.layers), 4)
+        self.assertTrue(isinstance(predictor_model.layers[1], MoleculeConv))
+        self.assertTrue(isinstance(predictor_model.layers[2], Dense))
 
-        self.assertEqual(predictor_model.layers[0].inner_dim, 38)
-        self.assertEqual(predictor_model.layers[0].units, 512)
+        self.assertEqual(predictor_model.layers[1].inner_dim, 38)
+        self.assertEqual(predictor_model.layers[1].units, 512)

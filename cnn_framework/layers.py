@@ -7,12 +7,15 @@ import theano
 from keras import activations, initializations
 from keras.engine.topology import Layer
 from keras.layers import merge
+import numpy as np
 
 
 class MoleculeConv(Layer):
     def __init__(self, units, inner_dim, depth=2, init_output='uniform',
                  activation_output='softmax', init_inner='identity',
-                 activation_inner='linear', scale_output=0.01, padding=False, **kwargs):
+                 activation_inner='linear', scale_output=0.01, padding=False, 
+                 dropout_rate_outer=0.0, dropout_rate_inner=0.0,
+                 padding_final_size=None, **kwargs):
         if depth < 1:
             quit('Cannot use MoleculeConv with depth zero')
         self.init_output = initializations.get(init_output)
@@ -24,13 +27,27 @@ class MoleculeConv(Layer):
         self.depth = depth
         self.scale_output = scale_output
         self.padding = padding
-
+        self.padding_final_size = padding_final_size
+        self.dropout_rate_outer = dropout_rate_outer
+        self.dropout_rate_inner = dropout_rate_inner
+        self.mask_inner = []
+        self.mask_output = []
+        
         self.initial_weights = None
         self.input_dim = 4  # each entry is a 3D N_atom x N_atom x N_feature tensor
-        if self.input_dim:
-            kwargs['input_shape'] = (None, None, None,)  # 3D tensor for each input
 
         super(MoleculeConv, self).__init__(**kwargs)
+
+    def gen_mask(self, rng):
+        retain_prob = 1.0 - self.dropout_rate_inner
+        for mask in self.mask_inner:
+            size = K.int_shape(mask)
+            K.set_value(mask,rng.binomial(n=1,p=retain_prob,size=size).astype(np.float32))
+            
+        retain_prob = 1.0 - self.dropout_rate_outer
+        for mask in self.mask_output:
+            size = K.int_shape(mask)
+            K.set_value(mask,rng.binomial(n=1,p=retain_prob,size=size).astype(np.float32))
 
     def build(self, input_shape):
         """
@@ -102,8 +119,16 @@ class MoleculeConv(Layer):
         # Iterate through different depths, updating atom matrix each time
         A_new = A
         for depth in range(self.depth):
-            A_new = self.activation_inner(K.dot(K.dot(C, A_new) + K.sum(B, axis=1), self.W_inner[depth+1, :, :])
-                                          + self.b_inner[depth+1, 0, :])
+            temp = K.dot(K.dot(C, A_new) + K.sum(B, axis=1), self.W_inner[depth+1, :, :])\
+                + self.b_inner[depth+1, 0, :]
+                
+            if self.dropout_rate_inner != 0.0:
+                mask = K.variable(np.ones(shape=(self.padding_final_size, self.inner_dim),dtype=np.float32))
+                self.mask_inner.append(mask)
+                n_atom = K.shape(temp)[0]
+                temp *= mask[:n_atom,:]
+                
+            A_new = self.activation_inner(temp)
 
             presum_fp_new = self.attributes_to_fp_contribution(A_new, depth + 1)
             fp_all_depth = fp_all_depth + presum_fp_new
@@ -123,7 +148,15 @@ class MoleculeConv(Layer):
         output_dot.name = 'output_dot'
         output_bias = self.b_output[depth, 0, :]
         output_bias.name = 'output_bias'
-        output_activated = self.activation_output(output_dot + output_bias)
+        temp = output_dot + output_bias
+        
+        if self.dropout_rate_outer != 0.0:
+            mask = K.variable(np.ones(shape=(self.padding_final_size,self.units),dtype=np.float32))
+            self.mask_output.append(mask)
+            n_atom = K.shape(temp)[0]
+            temp *= mask[:n_atom,:]
+        
+        output_activated = self.activation_output(temp)
         output_activated.name = 'output_activated'
         return output_activated
 
@@ -134,7 +167,11 @@ class MoleculeConv(Layer):
                   'init_inner': self.init_inner.__name__,
                   'activation_inner': self.activation_inner.__name__,
                   'activation_output': self.activation_output.__name__,
-                  'input_dim': self.input_dim,
-                  'depth': self.depth}
+                  'scale_output': self.scale_output,
+                  'padding': self.padding,
+                  'padding_final_size': self.padding_final_size,
+                  'depth' : self.depth,
+                  'dropout_rate_inner': self.dropout_rate_inner,
+                  'dropout_rate_outer': self.dropout_rate_outer}
         base_config = super(MoleculeConv, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
