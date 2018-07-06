@@ -19,7 +19,7 @@ setup(
     version='1.0.0',
     packages=['dde'],
     description='Data Driven Estimator',
-    author='Kehang Han',
+    author='Kehang Han, Yi-Pei Li, Colin Grambow',
     author_email='rmg_dev@mit.edu',
     py_modules=modules,
     scripts=scripts
