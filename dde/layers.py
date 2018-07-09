@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
+import numpy as np
 import keras.backend as K
-import theano.tensor as T
-import theano
 from keras import activations, initializations
 from keras.engine.topology import Layer
 from keras.layers import merge
-import numpy as np
+import theano
+import theano.tensor as T
 
 
 class MoleculeConv(Layer):

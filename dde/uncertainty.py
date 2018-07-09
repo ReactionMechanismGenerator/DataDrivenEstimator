@@ -1,8 +1,11 @@
-import keras.backend as K
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
 import numpy as np
-from keras.engine.topology import Layer 
+import keras.backend as K
+from keras.engine.topology import Layer
 from keras.models import Model
-import time
+
 
 class EnsembleModel(Model):
     def __init__(self, seeds=[None], **kwargs):
@@ -68,7 +71,8 @@ class EnsembleModel(Model):
         model = super(EnsembleModel, cls).from_config(config, custom_objects=custom_objects)
         model.seeds = config.get('seeds')
         return model
-        
+
+
 class RandomMask(Layer):
     """Applies Mask to the input.
     """

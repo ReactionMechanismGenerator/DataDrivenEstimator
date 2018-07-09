@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-from cnn_framework import layers
+import inspect
+import unittest
+
+import numpy as np
+from numpy.testing import assert_allclose
+from nose.plugins.attrib import attr
 import keras.backend as K
 from keras.engine import Model, Input
 from keras.models import Sequential
-import numpy as np
-from numpy.testing import assert_allclose
-import inspect
-from nose.plugins.attrib import attr
-import unittest
+
+from dde import layers
 
 
 class TestLayer(unittest.TestCase):

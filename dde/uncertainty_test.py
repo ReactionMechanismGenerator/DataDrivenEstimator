@@ -1,9 +1,13 @@
-import keras.backend as K
-import numpy as np
-from keras.layers import Input, Dense
-from uncertainty import RandomMask, EnsembleModel
-import time
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
 import unittest
+
+import numpy as np
+import keras.backend as K
+from keras.layers import Input, Dense
+from dde.uncertainty import RandomMask, EnsembleModel
+
 
 class TestRandomMask(unittest.TestCase):
     def test_random_mask(self):
@@ -46,4 +50,3 @@ class TestRandomMask(unittest.TestCase):
         self.assertAlmostEqual(expected_y_output,y_output[0][0],6)
         self.assertAlmostEqual(expected_std_output,std_output[0][0],6)
         self.assertAlmostEqual(expected_loss,loss,6)
-        

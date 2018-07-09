@@ -2,21 +2,25 @@
 # -*- coding:utf-8 -*-
 
 from __future__ import print_function
-from cnn_framework.layers import MoleculeConv
-from .uncertainty import RandomMask, EnsembleModel
+
+import datetime
+import json
+import logging
+import os
+import time
+
+import numpy as np
+
 from keras.models import Model
 from keras.layers import Input
 from keras.layers.core import Dense
 from keras.optimizers import RMSprop, Adam
-import numpy as np
-import theano.tensor as T 
 from keras import initializations
 from keras.utils.visualize_util import plot
-import json
-import datetime
-import logging
-import os
-import time
+import theano.tensor as T 
+
+from dde.layers import MoleculeConv
+from dde.uncertainty import RandomMask, EnsembleModel
 
 
 def build_model(embedding_size=512, attribute_vector_size=33, depth=5, 

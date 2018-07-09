@@ -3,11 +3,13 @@
 
 import os
 import unittest
-import cnn_framework
-from cnn_framework.predictor import Predictor
-from cnn_framework.input import read_input_file
-from cnn_framework.layers import MoleculeConv
+
 from keras.layers.core import Dense
+
+import dde
+from dde.predictor import Predictor
+from dde.input import read_input_file
+from dde.layers import MoleculeConv
 
 
 class TestInput(unittest.TestCase):
@@ -16,7 +18,7 @@ class TestInput(unittest.TestCase):
 
         predictor_test = Predictor()
 
-        path = os.path.join(os.path.dirname(cnn_framework.__file__),
+        path = os.path.join(os.path.dirname(dde.__file__),
                             'test_data',
                             'minimal_predictor',
                             'predictor_input.py')

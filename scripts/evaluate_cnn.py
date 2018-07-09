@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-import os
 import argparse
 import json
+
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from cnn_framework.data import get_db_mols
-from cnn_framework.predictor import Predictor
+from dde.data import get_db_mols
+from dde.predictor import Predictor
 
 
 def parse_command_line_arguments():
