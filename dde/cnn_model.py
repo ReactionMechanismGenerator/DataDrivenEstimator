@@ -42,24 +42,26 @@ def build_model(embedding_size=512, attribute_vector_size=33, depth=5,
     inputs = Input(shape=(None, None, None)) # 3D tensor for each input
 
     x = MoleculeConv(units=embedding_size,
-                           inner_dim=attribute_vector_size-1,
-                           depth=depth,
-                           scale_output=scale_output,
-                           padding=padding,
-                           activation_inner=mol_conv_inner_activation,
-                           activation_output=mol_conv_outer_activation,
-                           dropout_rate_inner=dropout_rate_inner,
-                           dropout_rate_outer=dropout_rate_outer,
-                           padding_final_size=padding_final_size)(inputs)
+                     inner_dim=attribute_vector_size-1,
+                     depth=depth,
+                     scale_output=scale_output,
+                     padding=padding,
+                     activation_inner=mol_conv_inner_activation,
+                     activation_output=mol_conv_outer_activation,
+                     dropout_rate_inner=dropout_rate_inner,
+                     dropout_rate_outer=dropout_rate_outer,
+                     padding_final_size=padding_final_size)(inputs)
 
     logging.info('cnn_model: added MoleculeConv layer ({} -> {})'.format('mol', embedding_size))
     if hidden > 0:
         for i in range(hidden_depth):
-            if dropout_rate_hidden!=0.0: x = RandomMask(dropout_rate_hidden)(x)
-            x= Dense(hidden, activation=hidden_activation)(x)
+            if dropout_rate_hidden != 0.0:
+                x = RandomMask(dropout_rate_hidden)(x)
+            x = Dense(hidden, activation=hidden_activation)(x)
             logging.info('cnn_model: added {} Dense layer (-> {})'.format(hidden_activation, hidden))
 
-    if dropout_rate_output!=0.0: x = RandomMask(dropout_rate_output)(x)
+    if dropout_rate_output != 0.0:
+        x = RandomMask(dropout_rate_output)(x)
     y = Dense(output_size, activation=output_activation)(x)
 
     logging.info('cnn_model: added {} Dense layer (-> {})'.format(output_activation, output_size))
@@ -69,7 +71,6 @@ def build_model(embedding_size=512, attribute_vector_size=33, depth=5,
     else:
         model = EnsembleModel(input=inputs, output=y, seeds=range(n_model))
 
-        
     # Compile
     if optimizer == 'adam':
         optimizer = Adam(lr=lr)

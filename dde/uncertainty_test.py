@@ -16,7 +16,8 @@ class TestRandomMask(unittest.TestCase):
         y = mask(x)
         fun = K.function([x], [y])
         rng = np.random.RandomState(0)
-        mask.gen_mask(rng)        
+        mask.gen_masks([rng])
+        mask.set_mask(0)
         output = fun([np.array([np.ones((3,3))])])[0][0]
         expected_output = np.array([[1,1,1],[1,0,1],[0,1,1]])
         self.assertTrue(np.array_equal(output,expected_output))
@@ -43,7 +44,7 @@ class TestRandomMask(unittest.TestCase):
         train_y = np.random.normal(size=(3,1))
         model.train_on_batch(train_x, train_y)
         loss = model.test_on_batch(train_x, train_y)
-        y_output, std_output =model.predict(np.array([train_x[0]]),sigma=True)
+        y_output, std_output = model.predict(np.array([train_x[0]]),sigma=True)
         expected_y_output = 1.42774868
         expected_std_output = 0.06707561
         expected_loss = 1.07002103329

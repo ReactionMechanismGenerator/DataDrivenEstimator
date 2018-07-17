@@ -14,27 +14,39 @@ class EnsembleModel(Model):
         self.seeds = seeds
         self.weight_generators = None
         self.mask_id = 0
-        
-    def gen_mask(self, seed):
-        rng = np.random.RandomState()
-        if seed is not None:
-            rng.seed(seed)
+        self.generated_masks = False
+
+    def gen_masks(self):
+        rngs = []
+        for seed in self.seeds:
+            rng = np.random.RandomState()
+            if seed is not None:
+                rng.seed(seed)
+            rngs.append(rng)
         for layer in self.layers:
-            if 'gen_mask' in dir(layer):
-                layer.gen_mask(rng)
+            if 'gen_masks' in dir(layer):
+                layer.gen_masks(rngs)
+        self.generated_masks = True
+
+    def set_mask(self, idx):
+        if not self.generated_masks:
+            self.gen_masks()
+        for layer in self.layers:
+            if 'set_mask' in dir(layer):
+                layer.set_mask(idx)
         
     def reset_mask_id(self):
         self.mask_id = 0        
 
     def train_on_batch(self, x, y, **kwargs):   
-        seed = np.random.choice(self.seeds)      
-        self.gen_mask(seed)
+        idx = np.random.choice(len(self.seeds))
+        self.set_mask(idx)
         loss = super(EnsembleModel,self).train_on_batch(x, y, **kwargs)
         return loss
 
     def test_on_batch(self, x, y, **kwargs):   
-        seed = np.random.choice(self.seeds)
-        self.gen_mask(seed)
+        idx = np.random.choice(len(self.seeds))
+        self.set_mask(idx)
         loss = super(EnsembleModel,self).test_on_batch(x, y, **kwargs)
         return loss
     
@@ -42,7 +54,7 @@ class EnsembleModel(Model):
         Y = []
         for j in range(len(self.seeds)):
             print 'mask {}'.format(j)
-            self.gen_mask(self.seeds[j])
+            self.set_mask(j)
             Y += [super(EnsembleModel,self).predict(x, **kwargs)] 
         Y_avg = np.mean(Y,axis=0)
         Y_var = np.var(Y,axis=0)
@@ -53,7 +65,7 @@ class EnsembleModel(Model):
     def predict(self, x, sigma=False, **kwargs):
         Y = []
         for j in range(len(self.seeds)):
-            self.gen_mask(self.seeds[j])
+            self.set_mask(j)
             Y += [super(EnsembleModel,self).predict(x, **kwargs)] 
         Y_avg = np.mean(Y,axis=0)
         if sigma:
@@ -78,7 +90,8 @@ class RandomMask(Layer):
     """
     
     def __init__(self, dropout_rate, **kwargs):
-        self.dropout_rate = dropout_rate       
+        self.dropout_rate = dropout_rate
+        self.vals = []
         super(RandomMask, self).__init__(**kwargs)
 
     def call(self, x, **kwargs):
@@ -87,12 +100,15 @@ class RandomMask(Layer):
         x *= self.mask
         return x
     
-    def gen_mask(self, rng):
-        retain_prob = 1.0 - self.dropout_rate
-        size = K.int_shape(self.mask)
-        K.set_value(self.mask,rng.binomial(n=1,p=retain_prob,size=size).astype(np.float32))
-#        K.set_value(self.mask,np.random.binomial(n=1,p=retain_prob,size=size).astype(np.float32))
-    
+    def gen_masks(self, rngs):
+        for rng in rngs:
+            retain_prob = 1.0 - self.dropout_rate
+            size = K.int_shape(self.mask)
+            self.vals.append(rng.binomial(n=1, p=retain_prob, size=size).astype(np.float32))
+
+    def set_mask(self, idx):
+        K.set_value(self.mask, self.vals[idx])
+
     def get_config(self):
         config = {'dropout_rate': self.dropout_rate}
         base_config = super(RandomMask, self).get_config()
