@@ -32,22 +32,35 @@ class MoleculeConv(Layer):
         self.dropout_rate_inner = dropout_rate_inner
         self.mask_inner = []
         self.mask_output = []
-        
+        self.masks_inner_vals = []
+        self.masks_output_vals = []
+
         self.initial_weights = None
         self.input_dim = 4  # each entry is a 3D N_atom x N_atom x N_feature tensor
 
         super(MoleculeConv, self).__init__(**kwargs)
 
-    def gen_mask(self, rng):
-        retain_prob = 1.0 - self.dropout_rate_inner
-        for mask in self.mask_inner:
-            size = K.int_shape(mask)
-            K.set_value(mask,rng.binomial(n=1,p=retain_prob,size=size).astype(np.float32))
-            
-        retain_prob = 1.0 - self.dropout_rate_outer
-        for mask in self.mask_output:
-            size = K.int_shape(mask)
-            K.set_value(mask,rng.binomial(n=1,p=retain_prob,size=size).astype(np.float32))
+    def gen_masks(self, rngs):
+        for rng in rngs:
+            retain_prob = 1.0 - self.dropout_rate_inner
+            vals = []
+            for mask in self.mask_inner:
+                size = K.int_shape(mask)
+                vals.append(rng.binomial(n=1,p=retain_prob,size=size).astype(np.float32))
+            self.masks_inner_vals.append(vals)
+
+            retain_prob = 1.0 - self.dropout_rate_outer
+            vals = []
+            for mask in self.mask_output:
+                size = K.int_shape(mask)
+                vals.append(rng.binomial(n=1,p=retain_prob,size=size).astype(np.float32))
+            self.masks_output_vals.append(vals)
+
+    def set_mask(self, idx):
+        for mask, vals in zip(self.mask_inner, self.masks_inner_vals[idx]):
+            K.set_value(mask, vals)
+        for mask, vals in zip(self.mask_output, self.masks_output_vals[idx]):
+            K.set_value(mask, vals)
 
     def build(self, input_shape):
         """
