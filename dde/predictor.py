@@ -106,10 +106,9 @@ class Predictor(object):
 
         X_test, y_test, folded_Xs, folded_ys = folded_data
 
-        losses = []
-        inner_val_losses = []
-        outer_val_losses = []
-        test_losses = []
+        losses, inner_val_losses, outer_val_losses, test_losses = [], [], [], []
+        train_rmses, inner_val_rmses, outer_val_rmses, test_rmses = [], [], [], []
+        train_maes, inner_val_maes, outer_val_maes, test_maes = [], [], [], []
         for fold in range(folds):
             data = prepare_data_one_fold(folded_Xs,
                                          folded_ys,
@@ -153,6 +152,14 @@ class Predictor(object):
             inner_val_rmse, inner_val_mae = self.evaluate(X_inner_val, y_inner_val)
             outer_val_rmse, outer_val_mae = self.evaluate(X_outer_val, y_outer_val)
             test_rmse, test_mae = self.evaluate(X_test, y_test)
+            train_rmses.append(train_rmse)
+            train_maes.append(train_mae)
+            inner_val_rmses.append(inner_val_rmse)
+            inner_val_maes.append(inner_val_mae)
+            outer_val_rmses.append(outer_val_rmse)
+            outer_val_maes.append(outer_val_mae)
+            test_rmses.append(test_rmse)
+            test_maes.append(test_mae)
 
             # save model and write fold report
             fpath = os.path.join(save_model_path, 'fold_{0}'.format(fold))
@@ -174,6 +181,14 @@ class Predictor(object):
         full_folds_mean_inner_val_loss = np.mean([l[-1] for l in inner_val_losses if len(l) > 0])
         full_folds_mean_outer_val_loss = np.mean(outer_val_losses)
         full_folds_mean_test_loss = np.mean(test_losses)
+        full_folds_mean_train_rmse = np.mean(train_rmses)
+        full_folds_mean_train_mae = np.mean(train_maes)
+        full_folds_mean_inner_val_rmse = np.mean(inner_val_rmses)
+        full_folds_mean_inner_val_mae = np.mean(inner_val_maes)
+        full_folds_mean_outer_val_rmse = np.mean(outer_val_rmses)
+        full_folds_mean_outer_val_mae = np.mean(outer_val_maes)
+        full_folds_mean_test_rmse = np.mean(test_rmses)
+        full_folds_mean_test_mae = np.mean(test_maes)
 
         full_folds_loss_report_path = os.path.join(save_model_path, 'full_folds_loss_report.txt')
 
@@ -181,7 +196,11 @@ class Predictor(object):
                           full_folds_mean_inner_val_loss,
                           full_folds_mean_outer_val_loss,
                           full_folds_mean_test_loss,
-                          full_folds_loss_report_path)
+                          full_folds_loss_report_path,
+                          train_rmse=full_folds_mean_train_rmse, train_mae=full_folds_mean_train_mae,
+                          inner_val_rmse=full_folds_mean_inner_val_rmse, inner_val_mae=full_folds_mean_inner_val_mae,
+                          outer_val_rmse=full_folds_mean_outer_val_rmse, outer_val_mae=full_folds_mean_outer_val_mae,
+                          test_rmse=full_folds_mean_test_rmse, test_mae=full_folds_mean_test_mae)
 
         # Delete tensor directory
         if self.save_tensors_dir is not None:
