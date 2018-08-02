@@ -325,7 +325,7 @@ def prepare_full_train_data_from_file(datafile,
             if identifier.startswith('InChI'):
                 mol = Molecule().fromInChI(identifier, backend='rdkit-first')
             else:
-                mol = Molecule().fromSMILES(identifier)
+                mol = Molecule().fromSMILES(identifier, backend='rdkit-first')
             x = get_molecule_tensor(mol,
                                     add_extra_atom_attribute=add_extra_atom_attribute,
                                     add_extra_bond_attribute=add_extra_bond_attribute,
