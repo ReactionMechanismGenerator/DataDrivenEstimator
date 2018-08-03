@@ -98,50 +98,66 @@ def prepare_predictor(input_file, weights_file=None, model_file=None, mean_and_s
     return predictor
 
 
-def make_predictions(predictor, id_list):
+def make_predictions(predictor, id_list, uncertainty=False):
 
-    ys_cnn = []
+    results = []
     for ident in tqdm(id_list):
         mol = str_to_mol(ident)
-        y_cnn = predictor.predict(mol)
-        ys_cnn.append(y_cnn)
+        result = predictor.predict(mol, sigma=uncertainty)
+        results.append(result)
 
-    return ys_cnn
+    return results
 
 
-def evaluate(id_list, ys, ys_pred, prediction_task="Hf298(kcal/mol)"):
+def evaluate(id_list, ys, results, prediction_task="Hf298(kcal/mol)", uncertainty=False):
 
     result_df = pd.DataFrame(index=id_list)
 
     result_df[prediction_task+"_true"] = pd.Series(ys, index=result_df.index)
+    if uncertainty:
+        ys_pred, uncertainties = zip(*results)
+        result_df[prediction_task+"_uncertainty"] = pd.Series(uncertainties, index=result_df.index)
+    else:
+        ys_pred = results
     result_df[prediction_task+"_pred"] = pd.Series(ys_pred, index=result_df.index)
 
     diff = abs(result_df[prediction_task+"_true"]-result_df[prediction_task+"_pred"])
+    sqe = diff ** 2.0
 
     # if the prediction task is Cp
     # since it has 7 values
     # we'll average them for evaluation
     if prediction_task == 'Cp(cal/mol/K)':
         diff = [np.average(d) for d in diff]
+        sqe = [np.average(s) for s in sqe]
 
     result_df[prediction_task+"_diff"] = pd.Series(diff, index=result_df.index)
+    result_df[prediction_task+"_diff_squared"] = pd.Series(sqe, index=result_df.index)
 
     return result_df
 
 
-def display_result(result_df, prediction_task="Hf298(kcal/mol)"):
+def display_result(result_df, prediction_task="Hf298(kcal/mol)", uncertainty=False):
 
     descr = result_df[prediction_task+"_diff"].describe()
-
     count = int(descr.loc['count'])
-    mean = descr.loc['mean']
-    std = descr.loc['std']
+    mae = descr.loc['mean']
 
-    display_str = 'prediction task: {0}, count: {1}, error mean: {2:.02f}, error std: {3:.02f}'.format(prediction_task, 
-                                                                                                       count, mean, std) 
-    print(display_str)
+    descr = result_df[prediction_task+"_diff_squared"].describe()
+    rmse = np.sqrt(descr.loc['mean'])
 
-    return count, mean, std
+    print('Prediction task: {}'.format(prediction_task))
+    print('Count: {}'.format(count))
+    print('RMSE: {:.2f},  MAE: {:.2f}'.format(rmse, mae))
+
+    if uncertainty:
+        descr = result_df[prediction_task+"_uncertainty"].describe()
+        mu = descr.loc['mean']
+        print('Mean uncertainty: {:.2f}'.format(mu))
+    else:
+        mu = None
+
+    return count, rmse, mae, mu
 
 
 def validate(data_file, input_file, weights_file=None, model_file=None, mean_and_std_file=None):
@@ -149,6 +165,7 @@ def validate(data_file, input_file, weights_file=None, model_file=None, mean_and
     # load cnn predictor
     predictor = prepare_predictor(input_file, weights_file=weights_file,
                                   model_file=model_file, mean_and_std_file=mean_and_std_file)
+    uncertainty = False if model_file is None else True
 
     if data_file.endswith('.csv'):
         id_list, ys = [], []
@@ -162,12 +179,14 @@ def validate(data_file, input_file, weights_file=None, model_file=None, mean_and
                         y = y[0]
                     id_list.append(smi)
                     ys.append(y)
-        ys_pred = make_predictions(predictor, id_list)
-        result_df = evaluate(id_list, ys, ys_pred, prediction_task=predictor.prediction_task)
-        count, mean, std = display_result(result_df, prediction_task=predictor.prediction_task)
+        results = make_predictions(predictor, id_list, uncertainty=uncertainty)
+        result_df = evaluate(id_list, ys, results,
+                             prediction_task=predictor.prediction_task, uncertainty=uncertainty)
+        count, rmse, mae, mu = display_result(result_df, prediction_task=predictor.prediction_task)
         evaluation_results = {data_file: {"count": count,
-                                          "MAE": mean,
-                                          "MAE std": std}}
+                                          "RMSE": rmse,
+                                          "MAE": mae,
+                                          "Mean uncertainty": mu}}
     else:
         datasets = read_datasets_file(data_file)
 
@@ -181,18 +200,20 @@ def validate(data_file, input_file, weights_file=None, model_file=None, mean_and
                                            prediction_task=predictor.prediction_task)
 
             # Do the predictions
-            ys_pred = make_predictions(predictor, smiles_list)
+            results = make_predictions(predictor, smiles_list, uncertainty=uncertainty)
 
             # evaluate performance
-            result_df = evaluate(smiles_list, ys, ys_pred, prediction_task=predictor.prediction_task)
+            result_df = evaluate(smiles_list, ys, results,
+                                 prediction_task=predictor.prediction_task, uncertainty=uncertainty)
 
             # display result
-            count, mean, std = display_result(result_df, prediction_task=predictor.prediction_task)
+            count, rmse, mae, mu = display_result(result_df, prediction_task=predictor.prediction_task)
 
             table = '/'.join([host, db_name, collection_name])
             evaluation_results[table] = {"count": count,
-                                         "MAE": mean,
-                                         "MAE std": std}
+                                         "RMSE": rmse,
+                                         "MAE": mae,
+                                         "Mean uncertainty": mu}
 
     return evaluation_results
 
