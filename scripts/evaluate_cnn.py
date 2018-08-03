@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from dde.data import get_db_mols
+from dde.data import get_db_mols, str_to_mol
 from dde.predictor import Predictor
 
 
@@ -98,21 +98,20 @@ def prepare_predictor(input_file, weights_file=None, model_file=None, mean_and_s
     return predictor
 
 
-def make_predictions(predictor, smiles_list):
+def make_predictions(predictor, id_list):
 
-    from rmgpy.molecule import Molecule
     ys_cnn = []
-    for smiles in tqdm(smiles_list):
-        mol = Molecule().fromSMILES(smiles)
+    for ident in tqdm(id_list):
+        mol = str_to_mol(ident)
         y_cnn = predictor.predict(mol)
         ys_cnn.append(y_cnn)
 
     return ys_cnn
 
 
-def evaluate(smiles_list, ys, ys_pred, prediction_task="Hf298(kcal/mol)"):
+def evaluate(id_list, ys, ys_pred, prediction_task="Hf298(kcal/mol)"):
 
-    result_df = pd.DataFrame(index=smiles_list)
+    result_df = pd.DataFrame(index=id_list)
 
     result_df[prediction_task+"_true"] = pd.Series(ys, index=result_df.index)
     result_df[prediction_task+"_pred"] = pd.Series(ys_pred, index=result_df.index)
@@ -152,7 +151,7 @@ def validate(data_file, input_file, weights_file=None, model_file=None, mean_and
                                   model_file=model_file, mean_and_std_file=mean_and_std_file)
 
     if data_file.endswith('.csv'):
-        smiles_list, ys = [], []
+        id_list, ys = [], []
         with open(data_file) as df:
             for line in df:
                 line_split = line.strip().split()
@@ -161,10 +160,10 @@ def validate(data_file, input_file, weights_file=None, model_file=None, mean_and
                     y = [float(yi) for yi in line_split[1:]]
                     if len(y) == 1:
                         y = y[0]
-                    smiles_list.append(smi)
+                    id_list.append(smi)
                     ys.append(y)
-        ys_pred = make_predictions(predictor, smiles_list)
-        result_df = evaluate(smiles_list, ys, ys_pred, prediction_task=predictor.prediction_task)
+        ys_pred = make_predictions(predictor, id_list)
+        result_df = evaluate(id_list, ys, ys_pred, prediction_task=predictor.prediction_task)
         count, mean, std = display_result(result_df, prediction_task=predictor.prediction_task)
         evaluation_results = {data_file: {"count": count,
                                           "MAE": mean,

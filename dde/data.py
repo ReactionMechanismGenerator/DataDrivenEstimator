@@ -12,6 +12,14 @@ from rmgpy.molecule import Molecule
 from dde.molecule_tensor import get_molecule_tensor
 
 
+def str_to_mol(s):
+    if s.startswith('InChI'):
+        mol = Molecule().fromInChI(s, backend='rdkit-first')
+    else:
+        mol = Molecule().fromSMILES(s, backend='rdkit-first')
+    return mol
+
+
 def get_host_info(host):
 
     host_list = {"rmg":
@@ -73,7 +81,7 @@ def get_data_from_db(host, db_name, collection_name, prediction_task="Hf298(kcal
             adj = str(db_mol["adjacency_list"])
             mol = Molecule().fromAdjacencyList(adj)
         else:
-            mol = Molecule().fromSMILES(smile)
+            mol = str_to_mol(smile)
 
         if prediction_task != "Cp(cal/mol/K)":
             yi = float(db_mol[prediction_task])
@@ -322,10 +330,7 @@ def prepare_full_train_data_from_file(datafile,
 
         X = []
         for fidx, identifier in enumerate(identifiers):
-            if identifier.startswith('InChI'):
-                mol = Molecule().fromInChI(identifier, backend='rdkit-first')
-            else:
-                mol = Molecule().fromSMILES(identifier, backend='rdkit-first')
+            mol = str_to_mol(identifier)
             x = get_molecule_tensor(mol,
                                     add_extra_atom_attribute=add_extra_atom_attribute,
                                     add_extra_bond_attribute=add_extra_bond_attribute,
@@ -339,10 +344,7 @@ def prepare_full_train_data_from_file(datafile,
     else:
         X = []
         for identifier in identifiers:
-            if identifier.startswith('InChI'):
-                mol = Molecule().fromInChI(identifier)
-            else:
-                mol = Molecule().fromSMILES(identifier)
+            mol = str_to_mol(identifier)
             x = get_molecule_tensor(mol,
                                     add_extra_atom_attribute=add_extra_atom_attribute,
                                     add_extra_bond_attribute=add_extra_bond_attribute,
