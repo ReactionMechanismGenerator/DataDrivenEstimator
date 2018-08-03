@@ -22,7 +22,10 @@ def parse_command_line_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--data', metavar='FILE',
                         help='A file specifying which datasets to test on. Alternatively, a space-separated .csv file'
-                             ' with SMILES and output(s) in the first and subsequent columns, respectively.')
+                             ' with InChI/SMILES and output(s) in the first and subsequent columns, respectively.')
+
+    parser.add_argument('-o', '--out_file', metavar='FILE',
+                        help='If specified, write results for each molecule to this file')
 
     parser.add_argument('-i', '--input', metavar='FILE',
                         help='Path to predictor input file')
@@ -137,7 +140,7 @@ def evaluate(id_list, ys, results, prediction_task="Hf298(kcal/mol)", uncertaint
     return result_df
 
 
-def display_result(result_df, prediction_task="Hf298(kcal/mol)", uncertainty=False):
+def write_result(result_df, prediction_task="Hf298(kcal/mol)", uncertainty=False, out_file=None):
 
     descr = result_df[prediction_task+"_diff"].describe()
     count = int(descr.loc['count'])
@@ -157,10 +160,14 @@ def display_result(result_df, prediction_task="Hf298(kcal/mol)", uncertainty=Fal
     else:
         mu = None
 
+    if out_file is not None:
+        result_df.to_csv(path_or_buf=out_file)
+        print('Wrote detailed results to {}'.format(out_file))
+
     return count, rmse, mae, mu
 
 
-def validate(data_file, input_file, weights_file=None, model_file=None, mean_and_std_file=None):
+def validate(data_file, input_file, out_file=None, weights_file=None, model_file=None, mean_and_std_file=None):
 
     # load cnn predictor
     predictor = prepare_predictor(input_file, weights_file=weights_file,
@@ -182,7 +189,8 @@ def validate(data_file, input_file, weights_file=None, model_file=None, mean_and
         results = make_predictions(predictor, id_list, uncertainty=uncertainty)
         result_df = evaluate(id_list, ys, results,
                              prediction_task=predictor.prediction_task, uncertainty=uncertainty)
-        count, rmse, mae, mu = display_result(result_df, prediction_task=predictor.prediction_task)
+        count, rmse, mae, mu = write_result(result_df, prediction_task=predictor.prediction_task,
+                                            uncertainty=uncertainty, out_file=out_file)
         evaluation_results = {data_file: {"count": count,
                                           "RMSE": rmse,
                                           "MAE": mae,
@@ -191,7 +199,7 @@ def validate(data_file, input_file, weights_file=None, model_file=None, mean_and
         datasets = read_datasets_file(data_file)
 
         evaluation_results = {}
-        for host, db_name, collection_name in datasets:
+        for i, (host, db_name, collection_name) in enumerate(datasets):
 
             print("\nhost: {0}, db: {1}, collection: {2}".format(host, db_name, collection_name))
 
@@ -207,7 +215,12 @@ def validate(data_file, input_file, weights_file=None, model_file=None, mean_and
                                  prediction_task=predictor.prediction_task, uncertainty=uncertainty)
 
             # display result
-            count, rmse, mae, mu = display_result(result_df, prediction_task=predictor.prediction_task)
+            if out_file is not None:
+                out_file_i = out_file + '_' + str(i)
+            else:
+                out_file_i = None
+            count, rmse, mae, mu = write_result(result_df, prediction_task=predictor.prediction_task,
+                                                uncertainty=uncertainty, out_file=out_file_i)
 
             table = '/'.join([host, db_name, collection_name])
             evaluation_results[table] = {"count": count,
@@ -223,11 +236,12 @@ def main():
     args = parse_command_line_arguments()
 
     data_file = args.data
+    out_file = args.out_file
     input_file = args.input
     weights_file = args.weights
     model_file = args.architecture
     mean_and_std_file = args.mean_and_std
-    evaluation_results = validate(data_file, input_file, weights_file=weights_file,
+    evaluation_results = validate(data_file, input_file, out_file=out_file, weights_file=weights_file,
                                   model_file=model_file, mean_and_std_file=mean_and_std_file)
 
     with open('evaluation_results.json', 'w') as f_out:
