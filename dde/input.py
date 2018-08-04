@@ -24,7 +24,8 @@ def predictor_model(prediction_task="Hf298(kcal/mol)",
                     lr=0.01, optimizer='adam', loss='mse',
                     dropout_rate_inner=0.0, dropout_rate_outer=0.0,
                     dropout_rate_hidden=0.0, dropout_rate_output=0.0,
-                    n_model=None):
+                    n_model=None,
+                    freeze_mol_conv=False):
                     
     if dropout_rate_inner==0.0 and dropout_rate_outer==0.0 \
         and dropout_rate_hidden==0.0 and dropout_rate_output==0.0:
@@ -45,7 +46,8 @@ def predictor_model(prediction_task="Hf298(kcal/mol)",
                         lr, optimizer, loss,
                         dropout_rate_inner, dropout_rate_outer,
                         dropout_rate_hidden, dropout_rate_output,
-                        n_model, padding_final_size)
+                        n_model, padding_final_size,
+                        freeze_mol_conv)
     
     predictor.prediction_task = prediction_task
     predictor.model = model

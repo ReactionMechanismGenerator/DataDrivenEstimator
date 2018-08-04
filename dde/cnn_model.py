@@ -32,7 +32,8 @@ def build_model(embedding_size=512, attribute_vector_size=33, depth=5,
                 lr=0.01, optimizer='adam', loss='mse',
                 dropout_rate_inner=0.0, dropout_rate_outer=0.0,
                 dropout_rate_hidden=0.0, dropout_rate_output=0.0,
-                n_model=None, padding_final_size=None):
+                n_model=None, padding_final_size=None,
+                freeze_mol_conv=False):
 
     """
     build generic cnn model that takes molecule tensor and predicts output
@@ -50,7 +51,8 @@ def build_model(embedding_size=512, attribute_vector_size=33, depth=5,
                      activation_output=mol_conv_outer_activation,
                      dropout_rate_inner=dropout_rate_inner,
                      dropout_rate_outer=dropout_rate_outer,
-                     padding_final_size=padding_final_size)(inputs)
+                     padding_final_size=padding_final_size,
+                     trainable=not freeze_mol_conv)(inputs)
 
     logging.info('cnn_model: added MoleculeConv layer ({} -> {})'.format('mol', embedding_size))
     if hidden > 0:
@@ -82,7 +84,7 @@ def build_model(embedding_size=512, attribute_vector_size=33, depth=5,
 
     logging.info('compiling cnn_model...')
     model.compile(loss=loss, optimizer=optimizer)
-    logging.info('done compiling.')
+    logging.info(model.summary())
 
     return model
 
