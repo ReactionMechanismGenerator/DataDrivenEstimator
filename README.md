@@ -11,4 +11,4 @@
 
 ## Description
 
-A package of major data driven estimators for thermochemistry and kinetics
+A data driven estimator for molecular thermochemistry and kinetics
