@@ -133,6 +133,11 @@ def evaluate(id_list, ys, results, prediction_task="Hf298(kcal/mol)", uncertaint
     if prediction_task == 'Cp(cal/mol/K)':
         diff = [np.average(d) for d in diff]
         sqe = [np.average(s) for s in sqe]
+        if uncertainty:
+            us = result_df[prediction_task+"_uncertainty"]
+            aveu = [np.average(u) for u in us]
+            result_df[prediction_task+"_uncertainties"] = us
+            result_df[prediction_task+"_uncertainty"] = pd.Series(aveu, index=result_df.index)
 
     result_df[prediction_task+"_diff"] = pd.Series(diff, index=result_df.index)
     result_df[prediction_task+"_diff_squared"] = pd.Series(sqe, index=result_df.index)
