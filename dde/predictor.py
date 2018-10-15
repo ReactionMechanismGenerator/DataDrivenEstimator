@@ -418,10 +418,12 @@ class Predictor(object):
     def load_parameters(self, param_path=None, mean_and_std_path=None):
         if param_path is not None:
             self.model.load_weights(param_path)
+            logging.info('Loaded weights from {}'.format(param_path))
         if mean_and_std_path is not None:
             npzfile = np.load(mean_and_std_path)
             self.y_mean = npzfile['mean']
             self.y_std = npzfile['std']
+            logging.info('Loaded mean and std from {}'.format(mean_and_std_path))
 
     def reset_model(self):
         self.model = reset_model(self.model)
