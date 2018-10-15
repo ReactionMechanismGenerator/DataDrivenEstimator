@@ -8,6 +8,7 @@ source:
 
 build:
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+  noarch: generic
 
 requirements:
   build:
@@ -21,7 +22,7 @@ requirements:
     - pymongo
     - theano=0.9.0
     - pydot-ng
-    - rmg # we need to remove it if we build it for rmg to use
+    - rmg # We need to remove this when building for use in RMG
 
 test:
   source_files:
@@ -37,4 +38,4 @@ test:
 about:
   home: https://github.com/ReactionMechanismGenerator/DataDrivenEstimator
   license: MIT
-  summary: "A package of major data driven estimators for thermochemistry and kinetics."
+  summary: "A data driven estimator for molecular thermochemistry and kinetics"
