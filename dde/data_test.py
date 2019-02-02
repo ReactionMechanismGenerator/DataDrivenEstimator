@@ -40,12 +40,13 @@ class TestData(unittest.TestCase):
         folds = 5
         shuffle_seed = 4
         X, y = self.X[:], self.y[:]  # Make copies because they get shuffled in place
-        (folded_Xs, folded_ys) = prepare_folded_data(X, y, folds, shuffle_seed)
+        import numpy as np
+        np.random.seed(shuffle_seed)
+        (folded_Xs, folded_ys) = prepare_folded_data(X, y, folds)
         self.assertEqual(len(folded_Xs), folds)
         self.assertEqual(len(folded_ys), folds)
 
-        # test shuffle is expected
-        import numpy as np
+        # test shuffle is expected    
         all_indices = range(len(self.X))
         np.random.seed(shuffle_seed)
         np.random.shuffle(all_indices)
@@ -62,7 +63,8 @@ class TestData(unittest.TestCase):
         shuffle_seed = 4
         training_ratio = 0.9
         X, y = self.X[:], self.y[:]  # Make copies because they get shuffled in place
-        data = split_inner_val_from_train_data(X, y, shuffle_seed, training_ratio)
+        np.random.seed(shuffle_seed)
+        data = split_inner_val_from_train_data(X, y, training_ratio)
 
         X_train = data[0]
         X_inner_val = data[1]
@@ -92,8 +94,8 @@ class TestData(unittest.TestCase):
         folded_ys = [self.y[i:i+target_fold_size] for i in range(0, n, target_fold_size)]
 
         shuffle_seed = 4  # seed for method `prepare_data_one_fold()`
-        data = prepare_data_one_fold(folded_Xs, folded_ys, current_fold=0, training_ratio=training_ratio,
-                                     shuffle_seed=shuffle_seed)
+        np.random.seed(shuffle_seed)
+        data = prepare_data_one_fold(folded_Xs, folded_ys, current_fold=0, training_ratio=training_ratio)
 
         self.assertEqual(len(data), 6)
 
@@ -170,7 +172,6 @@ class TestData(unittest.TestCase):
 
         X_test, y_test, X_train_and_val, y_train_and_val = split_test_from_train_and_val(
                                                             self.X, self.y,
-                                                            shuffle_seed=None,
                                                             testing_ratio=0.1)
 
         self.assertEqual(len(X_test), 18)

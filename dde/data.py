@@ -375,11 +375,7 @@ def prepare_full_train_data_from_file(datafile,
 
 
 @attr('helper')
-def split_test_from_train_and_val(X, y, extra_data=None, shuffle_seed=None, testing_ratio=0.1):
-
-    # Feed shuffle seed
-    if shuffle_seed is not None:
-        np.random.seed(shuffle_seed)
+def split_test_from_train_and_val(X, y, extra_data=None, testing_ratio=0.1):
 
     # Get random number generator state so that we can shuffle multiple arrays
     rng_state = np.random.get_state()
@@ -399,27 +395,18 @@ def split_test_from_train_and_val(X, y, extra_data=None, shuffle_seed=None, test
     if extra_data is not None:
         extra_data_test, extra_data_train_and_val = extra_data[:split], extra_data[split:]
 
-    # reset np random seed to avoid side-effect on other methods
-    # relying on np.random
-    if shuffle_seed is not None:
-        np.random.seed()
-
     if extra_data is not None:
         return X_test, y_test, X_train_and_val, y_train_and_val, extra_data_test, extra_data_train_and_val
     else:
         return X_test, y_test, X_train_and_val, y_train_and_val
 
 
-def prepare_folded_data(X, y, folds, shuffle_seed=None):
+def prepare_folded_data(X, y, folds):
 
     # Get target size of each fold
     n = len(X)
     logging.info('Total of {} input data points'.format(n))
     target_fold_size = int(np.ceil(float(n) / folds))
-
-    # Feed shuffle seed
-    if shuffle_seed is not None:
-        np.random.seed(shuffle_seed)
 
     # Get random number generator state so that we can shuffle multiple arrays
     rng_state = np.random.get_state()
@@ -435,19 +422,10 @@ def prepare_folded_data(X, y, folds, shuffle_seed=None):
 
     logging.info('Split data into {} folds'.format(folds))
 
-    # reset np random seed to avoid side-effect on other methods
-    # relying on np.random
-    if shuffle_seed is not None:
-        np.random.seed()
-
     return folded_Xs, folded_ys
 
 
-def split_inner_val_from_train_data(X_train, y_train, shuffle_seed=None, training_ratio=0.9):
-
-    # Define validation set as random 10% of training
-    if shuffle_seed is not None:
-        np.random.seed(shuffle_seed)
+def split_inner_val_from_train_data(X_train, y_train, training_ratio=0.9):
 
     # Get random number generator state so that we can shuffle multiple arrays
     rng_state = np.random.get_state()
@@ -460,11 +438,6 @@ def split_inner_val_from_train_data(X_train, y_train, shuffle_seed=None, trainin
     split = int(len(X_train) * training_ratio)
     X_train, X_inner_val = X_train[:split], X_train[split:]
     y_train, y_inner_val = y_train[:split], y_train[split:]
-
-    # reset np random seed to avoid side-effect on other methods
-    # relying on np.random
-    if shuffle_seed is not None:
-        np.random.seed()
 
     return X_train, X_inner_val, y_train, y_inner_val
 
@@ -497,7 +470,6 @@ def prepare_data_one_fold(folded_Xs,
 
     X_train, X_inner_val, y_train, y_inner_val = split_inner_val_from_train_data(X_train,
                                                                                  y_train,
-                                                                                 shuffle_seed,
                                                                                  training_ratio)
 
     logging.info('Total training: {}'.format(len(X_train)))
