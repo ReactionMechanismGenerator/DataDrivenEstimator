@@ -47,8 +47,8 @@ class TestData(unittest.TestCase):
         # test shuffle is expected
         import numpy as np
         all_indices = range(len(self.X))
-        rng = np.random.RandomState(shuffle_seed)
-        rng.shuffle(all_indices)
+        np.random.seed(shuffle_seed)
+        np.random.shuffle(all_indices)
 
         first_X = folded_Xs[0][0]
         expected_first_X = self.X[all_indices[0]]
@@ -71,8 +71,8 @@ class TestData(unittest.TestCase):
 
         # test shuffle is expected
         training_indices = range(len(self.X))
-        rng = np.random.RandomState(shuffle_seed)
-        rng.shuffle(training_indices)
+        np.random.seed(shuffle_seed)
+        np.random.shuffle(training_indices)
 
         first_X_in_train = X_train[0]
         expected_first_X_in_train = self.X[training_indices[0]]
@@ -114,8 +114,8 @@ class TestData(unittest.TestCase):
         # test shuffle is expected
         testset_size = len(folded_Xs[0])
         training_val_indices = range(testset_size, len(self.X))
-        rng = np.random.RandomState(shuffle_seed)
-        rng.shuffle(training_val_indices)
+        np.random.seed(shuffle_seed)
+        np.random.shuffle(training_val_indices)
 
         first_X_in_train = X_train[0]
         expected_first_X_in_train = self.X[training_val_indices[0]]
